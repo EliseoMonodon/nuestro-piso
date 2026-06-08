@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nuestro Piso">
+<meta name="theme-color" content="#2D6A4F">
+<title>Nuestro Piso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --g:#2D6A4F;--gl:#52B788;--gp:#D8F3DC;
+  --a:#9C4A11;--al:#E07B39;--ap:#FEF0E7;
+  --u:#5B21B6;--ul:#8B5CF6;--up:#EDE9FE;
+  --s:#44403A;--sl:#8A8078;--sp:#F5F1EB;
+  --bg:#FAF8F4;--card:#fff;--bd:#E5DDD5;
+  --tx:#241E17;--tx2:#6B5A48;--tx3:#A89888;
+  --red:#B83030;--rp:#FFF0EE;
+  --r:14px;--rs:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);max-width:420px;margin:0 auto;padding-bottom:80px;min-height:100vh;overscroll-behavior:none}
+/* HEADER */
+.hdr{background:var(--card);border-bottom:1px solid var(--bd);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-title{font-size:19px;font-weight:700;color:var(--tx)}
+.hdr-sub{font-size:11px;color:var(--tx3);margin-top:1px}
+/* TABS */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--bd);display:flex;z-index:200;padding:6px 0 max(10px,env(safe-area-inset-bottom))}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;border:none;background:none;color:var(--tx3);font-size:10px;font-family:inherit;transition:color .18s}
+.tab.on{color:var(--g)}
+.tab i{font-size:22px}
+/* PAGES */
+.pg{display:none;padding:0 0 16px}
+.pg.on{display:block}
+.sec{padding:16px 16px 0}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.csm{background:var(--card);border:1px solid var(--bd);border-radius:var(--rs);padding:11px;margin-bottom:8px}
+/* LABELS */
+.lbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px}
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:13px 16px;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:none;width:100%;transition:opacity .15s,transform .12s;-webkit-user-select:none;user-select:none}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-g{background:var(--g);color:#fff}
+.btn-a{background:var(--a);color:#fff}
+.btn-s{background:var(--sp);color:var(--s)}
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-g{background:var(--gp);color:#1B5235}
+.pill-a{background:var(--ap);color:#7A3309}
+.pill-r{background:var(--rp);color:var(--red)}
+.pill-s{background:var(--sp);color:var(--s)}
+/* AVATARS */
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.av-e{background:#D8F3DC;color:#1B5235}
+.av-a{background:#FEF0E7;color:#7A3309}
+.av-u{background:#EDE9FE;color:#4C1D95}
+/* ROWS */
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border-bottom:none}
+/* CHECKBOXES */
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .18s,border-color .18s}
+.chk.done{background:var(--g);border-color:var(--g)}
+/* INPUTS */
+.inp{width:100%;padding:11px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-family:inherit;font-size:14px;color:var(--tx);background:var(--bg);outline:none;margin-bottom:8px}
+.inp:focus{border-color:var(--gl);outline:none}
+textarea.inp{resize:vertical;min-height:68px}
+select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A89888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+/* MODALS */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center}
+.mbg.on{display:flex}
+.modal{background:var(--card);border-radius:22px 22px 0 0;padding:20px 16px max(34px,calc(env(safe-area-inset-bottom)+16px));width:100%;max-width:420px;max-height:92vh;overflow-y:auto}
+.mhandle{width:36px;height:4px;border-radius:2px;background:var(--bd);margin:0 auto 16px}
+.mtitle{font-size:17px;font-weight:700;margin-bottom:13px;color:var(--tx)}
+/* CHIPS */
+.chips{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;background:var(--sp);color:var(--s);white-space:nowrap;transition:background .15s,color .15s}
+.chip.on{background:var(--g);color:#fff}
+/* BALANCE BAR */
+.bbar{height:5px;border-radius:3px;background:var(--bd);margin-top:6px;overflow:hidden}
+.bfill{height:100%;border-radius:3px;background:var(--gl);transition:width .4s}
+.bfill.neg{background:var(--al)}
+/* TOGGLES */
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--bd)}
+.toggle-row:last-child{border-bottom:none}
+.tog{width:38px;height:22px;border-radius:11px;background:var(--bd);position:relative;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--g)}
+.tog::after{content:'';width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tog.on::after{left:18px}
+/* GUIDE CARDS */
+.guide-card{border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden;margin-bottom:10px;background:var(--card)}
+.guide-img-placeholder{width:100%;height:100px;background:var(--sp);display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:12px;gap:6px}
+.guide-body{padding:11px}
+.guide-zone{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gl);margin-bottom:3px}
+.guide-name{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:5px}
+.guide-desc{font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:6px}
+.guide-prod{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:4px}
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--bd);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:border-color .18s,background .18s;background:var(--bg)}
+.upload-zone:hover,.upload-zone:active{border-color:var(--gl);background:var(--gp)}
+/* LOADING */
+.pulse{display:flex;flex-direction:column;gap:6px}
+.pline{height:12px;background:var(--bd);border-radius:4px;animation:pl 1.3s ease-in-out infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
+/* BADGE */
+.badge-you{font-size:9px;font-weight:700;color:#fff;background:var(--g);padding:2px 5px;border-radius:10px;margin-left:3px}
+/* STAT CARDS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.scard{background:var(--sp);border-radius:var(--rs);padding:12px;text-align:center}
+.snum{font-size:22px;font-weight:700;color:var(--tx)}
+.slbl{font-size:10px;color:var(--tx3);margin-top:1px}
+/* STAT ROWS */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.stat-row:last-child{border-bottom:none}
+/* EXP ROWS */
+.exp-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bd)}
+.exp-row:last-child{border-bottom:none}
+.eicon{width:36px;height:36px;border-radius:9px;background:var(--sp);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+/* HERO CARD */
+.hero{background:var(--g);color:#fff;border-radius:var(--r);padding:18px;margin-bottom:10px}
+.hero-lbl{font-size:11px;opacity:.7;margin-bottom:2px}
+.hero-title{font-size:22px;font-weight:700;margin-bottom:10px;line-height:1.2}
+.hero-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.18);color:#fff;margin-right:5px}
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(14px);background:#1a1209;color:#fff;padding:9px 15px;border-radius:18px;font-size:12px;font-weight:500;z-index:999;opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;white-space:nowrap;max-width:300px;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* SCANNER RESULT */
+.scan-result{background:var(--gp);border:1px solid #A8D5B5;border-radius:var(--rs);padding:13px;margin-top:10px}
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px 16px;color:var(--tx3)}
+.empty i{font-size:40px;display:block;margin-bottom:10px;opacity:.5}
+.empty-title{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--tx2)}
+.empty-sub{font-size:13px}
+/* AI BUBBLE */
+.ai-out{font-size:14px;line-height:1.65;color:var(--tx2);min-height:48px}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="hdr-title" id="htitle">Nuestro piso</div>
+    <div class="hdr-sub" id="hsub"></div>
+  </div>
+  <div style="display:flex;gap:5px;align-items:center">
+    <div class="av av-e" style="cursor:pointer;transition:opacity .2s" onclick="setMe('E')" id="uE">El</div>
+    <div class="av av-a" style="cursor:pointer;opacity:.35;transition:opacity .2s" onclick="setMe('A')" id="uA">An</div>
+    <div class="av av-u" style="cursor:pointer;opacity:.35;transition:opacity .2s" onclick="setMe('U')" id="uU">Ur</div>
+  </div>
+</div>
+
+<!-- PAGE: HOME -->
+<div id="pg-home" class="pg on">
+  <div class="sec">
+    <div class="hero" id="hero-card">
+      <div class="hero-lbl">Esta semana te toca</div>
+      <div class="hero-title" id="hero-text">Cargando...</div>
+      <div id="hero-tags"></div>
+    </div>
+    <div class="sgrid">
+      <div class="scard"><div class="snum" id="s-done">0</div><div class="slbl">hechas</div></div>
+      <div class="scard"><div class="snum" id="s-pend">0</div><div class="slbl">pendientes</div></div>
+      <div class="scard"><div class="snum" id="s-bal">0€</div><div class="slbl">tu balance</div></div>
+      <div class="scard"><div class="snum" id="s-next">—</div><div class="slbl">próximo en limpiar</div></div>
+    </div>
+    <div class="lbl">Acciones rápidas</div>
+    <div class="g2" style="margin-bottom:8px">
+      <button class="btn btn-s" onclick="goTab('tareas')" style="font-size:13px"><i class="ti ti-checkmark"></i> Mis tareas</button>
+      <button class="btn btn-a" onclick="openM('m-gasto')" style="font-size:13px"><i class="ti ti-plus"></i> Gasto</button>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <button class="btn btn-s" onclick="goTab('manual')" style="font-size:13px"><i class="ti ti-book-2"></i> Manual</button>
+      <button class="btn btn-g" onclick="openM('m-guia')" style="font-size:13px"><i class="ti ti-camera-plus"></i> Añadir ficha</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: TAREAS -->
+<div id="pg-tareas" class="pg">
+  <div class="sec">
+    <div class="chips" id="chore-chips">
+      <button class="chip on" onclick="switchCt('semana',this)">Esta semana</button>
+      <button class="chip" onclick="switchCt('rotacion',this)">Rotación</button>
+      <button class="chip" onclick="switchCt('asistente',this)">Asistente IA</button>
+    </div>
+
+    <!-- SEMANA -->
+    <div id="ct-semana">
+      <div class="lbl">Tareas · semana actual</div>
+      <div class="card" id="chore-list">
+        <div class="empty"><i class="ti ti-checklist"></i><div class="empty-title">Sin tareas</div><div class="empty-sub">Añade la primera tarea</div></div>
+      </div>
+      <button class="btn btn-s" onclick="openM('m-tarea')" style="margin-bottom:10px"><i class="ti ti-plus"></i> Añadir tarea</button>
+      <div class="lbl">Ausencias esta semana</div>
+      <div class="card">
+        <div class="toggle-row" onclick="togAbs('E')">
+          <div class="av av-e" style="width:28px;height:28px;font-size:11px">El</div>
+          <div style="flex:1;font-size:14px">Eliseo fuera</div>
+          <div class="tog" id="abs-E"></div>
+        </div>
+        <div class="toggle-row" onclick="togAbs('A')">
+          <div class="av av-a" style="width:28px;height:28px;font-size:11px">An</div>
+          <div style="flex:1;font-size:14px">Antonio fuera</div>
+          <div class="tog" id="abs-A"></div>
+        </div>
+        <div class="toggle-row" onclick="togAbs('U')">
+          <div class="av av-u" style="width:28px;height:28px;font-size:11px">Ur</div>
+          <div style="flex:1;font-size:14px">Urbano fuera</div>
+          <div class="tog" id="abs-U"></div>
+        </div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:8px"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan</div>
+      </div>
+    </div>
+
+    <!-- ROTACIÓN -->
+    <div id="ct-rotacion" style="display:none">
+      <div class="lbl">Próximas 4 semanas</div>
+      <div id="rot-table"></div>
+    </div>
+
+    <!-- ASISTENTE IA -->
+    <div id="ct-asistente" style="display:none">
+      <div class="lbl">Asistente de limpieza</div>
+      <div class="card">
+        <div class="ai-out" id="ai-out">Pregúntame cómo limpiar cualquier cosa del piso.</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start;text-align:left" onclick="askAI('¿Cómo limpiar el espejo del baño sin manchas? Queremos usar papel de periódico.')"><i class="ti ti-droplet"></i> Espejo sin manchas (con periódico)</button>
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start" onclick="askAI('¿Cómo desinfectar trapos de cocina de forma correcta?')"><i class="ti ti-wash-machine"></i> Desinfectar trapos de cocina</button>
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start" onclick="askAI('¿Cómo limpiar la cocina de inducción sin rayarla?')"><i class="ti ti-flame"></i> Cocina de inducción</button>
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start" onclick="askAI('¿Cómo limpiar felpudos y secapies de la entrada?')"><i class="ti ti-door-enter"></i> Secapies y felpudos</button>
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start" onclick="askAI('¿Cómo limpiar el horno de forma natural sin productos químicos fuertes?')"><i class="ti ti-tool"></i> Horno (método natural)</button>
+          <button class="btn btn-s" style="font-size:12px;justify-content:flex-start" onclick="askAI('¿Con qué frecuencia hay que limpiar cada zona del piso?')"><i class="ti ti-calendar"></i> Frecuencia recomendada por zonas</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <input type="text" class="inp" id="ai-inp" placeholder="Pregunta algo..." style="margin-bottom:0;flex:1">
+          <button class="btn btn-g" onclick="askAICustom()" style="width:auto;padding:11px 13px" aria-label="Preguntar"><i class="ti ti-send"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: GASTOS -->
+<div id="pg-gastos" class="pg">
+  <div class="sec">
+    <div class="chips" id="exp-chips">
+      <button class="chip on" onclick="switchEt('balance',this)">Balances</button>
+      <button class="chip" onclick="switchEt('historial',this)">Historial</button>
+      <button class="chip" onclick="switchEt('escanear',this)">Escanear ticket</button>
+    </div>
+
+    <!-- BALANCE -->
+    <div id="et-balance">
+      <div class="lbl">Quién debe a quién</div>
+      <div id="bal-cards"></div>
+      <button class="btn btn-a" onclick="openM('m-gasto')" style="margin-bottom:8px"><i class="ti ti-plus"></i> Añadir gasto manual</button>
+      <button class="btn btn-s" onclick="liquidar()"><i class="ti ti-check"></i> Liquidar todas las cuentas</button>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div id="et-historial" style="display:none">
+      <div class="lbl">Últimos gastos</div>
+      <div class="card" id="exp-hist">
+        <div class="empty"><i class="ti ti-receipt-off"></i><div class="empty-title">Sin gastos</div><div class="empty-sub">Añade el primero</div></div>
+      </div>
+    </div>
+
+    <!-- ESCANEAR TICKET -->
+    <div id="et-escanear" style="display:none">
+      <div class="lbl">Escanear ticket de compra</div>
+      <div class="card">
+        <div style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px">
+          Haz una foto al ticket. La IA lee el importe y el concepto, y los guarda. <strong style="color:var(--g)">La imagen se descarta inmediatamente</strong> — nunca se almacena.
+        </div>
+        <div class="upload-zone" onclick="document.getElementById('ticket-inp').click()">
+          <i class="ti ti-scan" style="font-size:36px;color:var(--gl);display:block;margin-bottom:7px"></i>
+          <div style="font-weight:600;color:var(--tx);margin-bottom:3px">Foto del ticket</div>
+          <div style="font-size:12px;color:var(--tx3)">Supermercado, ferretería, farmacia...</div>
+        </div>
+        <input type="file" id="ticket-inp" accept="image/*" capture="environment" style="display:none" onchange="scanTicket(event)">
+        <div id="scan-out" style="margin-top:10px"></div>
+      </div>
+      <div class="card" style="background:var(--sp);border-color:var(--sp)">
+        <div style="font-size:12px;color:var(--tx2);line-height:1.55">
+          <strong style="color:var(--s)">Privacidad:</strong> La imagen se convierte a texto en el momento, luego se elimina de la memoria. Solo se guarda el concepto, el importe, quién pagó y la fecha. Ni la foto ni el PDF se almacenan en ningún lado.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: MANUAL -->
+<div id="pg-manual" class="pg">
+  <div class="sec">
+    <div class="chips" id="zone-chips">
+      <button class="chip on" onclick="filterZone('todas',this)">Todas</button>
+      <button class="chip" onclick="filterZone('pasillo',this)">Pasillo</button>
+      <button class="chip" onclick="filterZone('cocina',this)">Cocina</button>
+      <button class="chip" onclick="filterZone('bano',this)">Baño</button>
+      <button class="chip" onclick="filterZone('salon',this)">Salón</button>
+    </div>
+    <div id="guide-list"></div>
+    <button class="btn btn-g" onclick="openM('m-guia')" style="margin-top:4px;margin-bottom:4px"><i class="ti ti-camera-plus"></i> Añadir ficha al manual</button>
+  </div>
+</div>
+
+<!-- PAGE: PISO -->
+<div id="pg-piso" class="pg">
+  <div class="sec">
+    <div class="lbl">Los habitantes</div>
+    <div class="card" style="padding:0 14px">
+      <div class="row">
+        <div class="av av-e" style="width:44px;height:44px;font-size:16px">El</div>
+        <div><div style="font-weight:700;font-size:15px">Eliseo<span class="badge-you" id="byE">Tú</span></div><div style="font-size:12px;color:var(--tx3)">Habitación 1</div></div>
+      </div>
+      <div class="row">
+        <div class="av av-a" style="width:44px;height:44px;font-size:16px">An</div>
+        <div><div style="font-weight:700;font-size:15px">Antonio<span class="badge-you" id="byA" style="display:none">Tú</span></div><div style="font-size:12px;color:var(--tx3)">Habitación 2</div></div>
+      </div>
+      <div class="row">
+        <div class="av av-u" style="width:44px;height:44px;font-size:16px">Ur</div>
+        <div><div style="font-weight:700;font-size:15px">Urbano<span class="badge-you" id="byU" style="display:none">Tú</span></div><div style="font-size:12px;color:var(--tx3)">Habitación 3</div></div>
+      </div>
+    </div>
+
+    <div class="lbl">Zonas comunes</div>
+    <div class="card" style="padding:0 14px">
+      <div class="row"><i class="ti ti-door-enter" style="color:var(--gl);font-size:20px;flex-shrink:0"></i><div><div style="font-size:14px;font-weight:600">Pasillo / corredor</div><div style="font-size:12px;color:var(--tx3)">Zona de paso y entrada</div></div></div>
+      <div class="row"><i class="ti ti-tools-kitchen-2" style="color:var(--al);font-size:20px;flex-shrink:0"></i><div><div style="font-size:14px;font-weight:600">Cocina</div><div style="font-size:12px;color:var(--tx3)">Horno · Microondas · Inducción · Lavavajillas</div></div></div>
+      <div class="row"><i class="ti ti-droplet" style="color:var(--g);font-size:20px;flex-shrink:0"></i><div><div style="font-size:14px;font-weight:600">Baño</div><div style="font-size:12px;color:var(--tx3)">Espejo · Ducha · WC · Lavabo</div></div></div>
+      <div class="row"><i class="ti ti-sofa" style="color:var(--sl);font-size:20px;flex-shrink:0"></i><div><div style="font-size:14px;font-weight:600">Salón</div><div style="font-size:12px;color:var(--tx3)">Zona común de descanso</div></div></div>
+    </div>
+
+    <div class="lbl">Estadísticas</div>
+    <div class="card">
+      <div class="stat-row"><span style="color:var(--tx2)">Tareas completadas</span><span style="font-weight:700" id="stat-done">—</span></div>
+      <div class="stat-row"><span style="color:var(--tx2)">Fichas en el manual</span><span style="font-weight:700" id="stat-guias">—</span></div>
+      <div class="stat-row"><span style="color:var(--tx2)">Gastos registrados</span><span style="font-weight:700" id="stat-exp">—</span></div>
+    </div>
+
+    <div class="lbl">Cómo compartir</div>
+    <div class="card" style="background:var(--gp);border-color:#A8D5B5">
+      <div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:10px">
+        Comparte la URL de esta página con Antonio y Urbano. Cada uno toca su inicial en el cabecero para identificarse. Los datos se guardan en el navegador de cada uno (<em>localStorage</em>), así que los cambios son locales por ahora — en la próxima versión se sincronizarán entre todos.
+      </div>
+      <button class="btn btn-g" onclick="copyURL()" style="font-size:13px"><i class="ti ti-copy"></i> Copiar enlace</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav class="tabbar">
+  <button class="tab on" onclick="goTab('home')" id="tb-home"><i class="ti ti-home-2"></i><span>Inicio</span></button>
+  <button class="tab" onclick="goTab('tareas')" id="tb-tareas"><i class="ti ti-checkmark"></i><span>Tareas</span></button>
+  <button class="tab" onclick="goTab('gastos')" id="tb-gastos"><i class="ti ti-receipt"></i><span>Gastos</span></button>
+  <button class="tab" onclick="goTab('manual')" id="tb-manual"><i class="ti ti-book-2"></i><span>Manual</span></button>
+  <button class="tab" onclick="goTab('piso')" id="tb-piso"><i class="ti ti-home-heart"></i><span>Piso</span></button>
+</nav>
+
+<!-- MODAL: GASTO -->
+<div class="mbg" id="m-gasto">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nuevo gasto</div>
+    <input type="text" class="inp" id="g-desc" placeholder="Descripción (ej. Compra Mercadona)">
+    <input type="number" class="inp" id="g-amt" placeholder="Importe total (€)" step="0.01" inputmode="decimal">
+    <select class="inp" id="g-payer">
+      <option value="E">Pagó Eliseo</option>
+      <option value="A">Pagó Antonio</option>
+      <option value="U">Pagó Urbano</option>
+    </select>
+    <select class="inp" id="g-cat">
+      <option value="hogar">Hogar / limpieza</option>
+      <option value="comida">Compra / comida</option>
+      <option value="ocio">Ocio</option>
+      <option value="otro">Otro</option>
+    </select>
+    <div class="g2">
+      <button class="btn btn-s" onclick="closeM('m-gasto')">Cancelar</button>
+      <button class="btn btn-a" onclick="addGasto()"><i class="ti ti-plus"></i> Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TAREA -->
+<div class="mbg" id="m-tarea">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nueva tarea</div>
+    <input type="text" class="inp" id="t-name" placeholder="Ej. Limpiar microondas">
+    <select class="inp" id="t-who">
+      <option value="E">Eliseo</option>
+      <option value="A">Antonio</option>
+      <option value="U">Urbano</option>
+      <option value="auto">Rotación automática</option>
+    </select>
+    <select class="inp" id="t-zone">
+      <option value="pasillo">Pasillo / corredor</option>
+      <option value="cocina">Cocina</option>
+      <option value="bano">Baño</option>
+      <option value="salon">Salón</option>
+      <option value="general">General</option>
+    </select>
+    <input type="number" class="inp" id="t-min" placeholder="Minutos estimados (ej. 15)" min="1" inputmode="numeric">
+    <div class="g2">
+      <button class="btn btn-s" onclick="closeM('m-tarea')">Cancelar</button>
+      <button class="btn btn-g" onclick="addTarea()"><i class="ti ti-plus"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: GUÍA -->
+<div class="mbg" id="m-guia">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nueva ficha del manual</div>
+    <input type="text" class="inp" id="gi-name" placeholder="Nombre del elemento (ej. Espejo del baño)">
+    <select class="inp" id="gi-zone">
+      <option value="bano">Baño</option>
+      <option value="cocina">Cocina</option>
+      <option value="pasillo">Pasillo / corredor</option>
+      <option value="salon">Salón</option>
+    </select>
+    <textarea class="inp" id="gi-desc" placeholder="¿Cómo se limpia? Trucos específicos de vuestro piso... (ej. El espejo: spray + papel de periódico para no dejar marcas)"></textarea>
+    <input type="text" class="inp" id="gi-prod" placeholder="Producto y dónde está (ej. Limpiacristales azul bajo el lavabo)">
+    <div class="lbl">Foto (opcional — no se almacena en el servidor)</div>
+    <div class="upload-zone" onclick="document.getElementById('gi-photo').click()" id="gi-drop" style="margin-bottom:9px;padding:16px">
+      <i class="ti ti-camera" style="font-size:26px;color:var(--tx3);display:block;margin-bottom:4px"></i>
+      <div style="font-size:13px;color:var(--tx3)">Toca para añadir foto</div>
+    </div>
+    <input type="file" id="gi-photo" accept="image/*" style="display:none" onchange="previewGuia(event)">
+    <div class="g2">
+      <button class="btn btn-s" onclick="closeM('m-guia')">Cancelar</button>
+      <button class="btn btn-g" onclick="saveGuia()"><i class="ti ti-bookmark"></i> Guardar ficha</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── ESTADO INICIAL ───────────────────────────────────────────────
+const USERS = {
+  E:{name:'Eliseo', cls:'av-e', short:'El'},
+  A:{name:'Antonio', cls:'av-a', short:'An'},
+  U:{name:'Urbano', cls:'av-u', short:'Ur'}
+};
+const ZONES = {pasillo:'Pasillo',cocina:'Cocina',bano:'Baño',salon:'Salón',general:'General'};
+
+const DEFAULT_STATE = {
+  chores:[
+    {id:1,name:'Barrer el pasillo / corredor',who:'E',done:false,zone:'pasillo',min:10},
+    {id:2,name:'Fregar el pasillo',who:'A',done:false,zone:'pasillo',min:15},
+    {id:3,name:'Limpiar WC y lavabo',who:'E',done:false,zone:'bano',min:20},
+    {id:4,name:'Espejo del baño',who:'U',done:false,zone:'bano',min:5},
+    {id:5,name:'Fregar suelos cocina',who:'A',done:false,zone:'cocina',min:15},
+    {id:6,name:'Limpiar cocina de inducción',who:'U',done:false,zone:'cocina',min:10},
+    {id:7,name:'Vaciar lavavajillas',who:'E',done:false,zone:'cocina',min:5},
+    {id:8,name:'Aspirar salón',who:'U',done:false,zone:'salon',min:15},
+    {id:9,name:'Sacar basura',who:'A',done:false,zone:'general',min:5},
+  ],
+  gastos:[
+    {id:1,desc:'Mercadona semana',amt:87.30,payer:'E',date:'3 jun',cat:'comida'},
+    {id:2,desc:'Bayetas y fregona',amt:14.50,payer:'U',date:'4 jun',cat:'hogar'},
+    {id:3,desc:'Internet junio',amt:35.00,payer:'E',date:'1 jun',cat:'otro'},
+  ],
+  abs:{E:false,A:false,U:false},
+  guias:[
+    {id:1,name:'Espejo del baño',zone:'bano',desc:'Aplica limpiacristales y frota con papel de periódico en movimientos circulares. El papel de periódico no deja pelusa ni rayas, a diferencia del papel normal.',prod:'Limpiacristales azul — debajo del lavabo',photo:''},
+    {id:2,name:'Cocina de inducción',zone:'cocina',desc:'Espera a que enfríe. Usa la rasqueta negra para las manchas secas incrustadas. Luego limpia con el paño de microfibra húmedo. Nunca estropajo de acero.',prod:'Limpiador vitrocerámica — armario bajo la pila',photo:''},
+    {id:3,name:'Secapies y felpudos',zone:'pasillo',desc:'Sacude en el rellano. Si están muy sucios, mételos a la lavadora a 40ºC. Déjalos secar colgados, nunca en la secadora porque se deforman.',prod:'No necesita producto especial',photo:''},
+    {id:4,name:'Trapos de cocina',zone:'cocina',desc:'Lavar a 60ºC mínimo para desinfectar de verdad. Cambiarlos cada semana. Si quedan húmedos encima de la encimera se llenan de bacterias — cuélgalos siempre.',prod:'Lavadora a 60ºC',photo:''},
+    {id:5,name:'Microondas',zone:'cocina',desc:'Pon un bol con agua y zumo de un limón a máxima potencia durante 3 minutos. Deja reposar 2 minutos sin abrir. El vapor afloja las manchas y luego basta un trapo.',prod:'Limón (o vinagre blanco del armario)',photo:''},
+  ],
+  nextCid:10, nextGid:4, nextGuia:6,
+};
+
+let me = 'E';
+let st = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let guiaPhotoB64 = '';
+let currentZoneFilter = 'todas';
+
+// ─── PERSISTENCIA ─────────────────────────────────────────────────
+function save() {
+  try {
+    // Guardamos sin las fotos base64 grandes para no saturar localStorage
+    const toSave = JSON.parse(JSON.stringify(st));
+    localStorage.setItem('piso-v3', JSON.stringify(toSave));
+    localStorage.setItem('piso-me', me);
+  } catch(e) { console.warn('Storage full:', e); }
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('piso-v3');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.chores) st = parsed;
+    }
+    const savedMe = localStorage.getItem('piso-me');
+    if (savedMe && USERS[savedMe]) {
+      me = savedMe;
+      updateUserUI();
+    }
+  } catch(e) {}
+  render();
+}
+
+// ─── NAVEGACIÓN ───────────────────────────────────────────────────
+const PAGE_TITLES = {home:'Nuestro piso',tareas:'Limpieza',gastos:'Gastos',manual:'Manual del piso',piso:'El piso'};
+
+function goTab(t) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('pg-'+t).classList.add('on');
+  document.getElementById('tb-'+t).classList.add('on');
+  document.getElementById('htitle').textContent = PAGE_TITLES[t] || t;
+  render();
+}
+
+// ─── USUARIO ──────────────────────────────────────────────────────
+function setMe(u) {
+  me = u;
+  updateUserUI();
+  save();
+  toast('Hola, ' + USERS[u].name);
+  render();
+}
+
+function updateUserUI() {
+  Object.keys(USERS).forEach(u => {
+    const el = document.getElementById('u'+u);
+    el.style.opacity = u === me ? '1' : '.35';
+    el.style.outline = u === me ? '2px solid var(--g)' : 'none';
+    el.style.outlineOffset = '2px';
+    document.getElementById('by'+u).style.display = u === me ? 'inline' : 'none';
+  });
+}
+
+// ─── RENDER PRINCIPAL ─────────────────────────────────────────────
+function render() {
+  rHero();
+  rChores();
+  rBal();
+  rHist();
+  rRot();
+  rGuias();
+  rStats();
+}
+
+// ─── HERO ─────────────────────────────────────────────────────────
+function rHero() {
+  const mine = st.chores.filter(c => c.who === me && !c.done);
+  const hero = document.getElementById('hero-text');
+  const tags = document.getElementById('hero-tags');
+  if (!hero) return;
+  if (mine.length === 0) {
+    hero.textContent = '¡Todo al día esta semana!';
+    tags.innerHTML = '<span class="hero-pill"><i class="ti ti-confetti"></i> Sin pendientes</span>';
+  } else {
+    const shown = mine.slice(0, 2);
+    hero.textContent = shown.map(c => c.name).join(' · ') + (mine.length > 2 ? ` +${mine.length-2} más` : '');
+    const mins = mine.reduce((a,c) => a+c.min, 0);
+    tags.innerHTML = `<span class="hero-pill"><i class="ti ti-clock"></i> ~${mins} min</span><span class="hero-pill"><i class="ti ti-user"></i> ${USERS[me].name}</span>`;
+  }
+  // Stats rápidos
+  const done = st.chores.filter(c => c.done).length;
+  const pend = st.chores.filter(c => !c.done).length;
+  setEl('s-done', done);
+  setEl('s-pend', pend);
+  const t = calcBal();
+  const myV = t[me];
+  setEl('s-bal', (myV >= 0 ? '+' : '') + myV.toFixed(0) + '€');
+  const others = Object.keys(USERS).filter(u => u !== me);
+  setEl('s-next', USERS[others[0]].name);
+}
+
+// ─── TAREAS ───────────────────────────────────────────────────────
+function rChores() {
+  const el = document.getElementById('chore-list');
+  if (!el) return;
+  if (st.chores.length === 0) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-checklist"></i><div class="empty-title">Sin tareas</div><div class="empty-sub">Añade la primera</div></div>';
+    return;
+  }
+  el.innerHTML = st.chores.map(c => {
+    const u = USERS[c.who];
+    const isMe = c.who === me;
+    const absent = st.abs[c.who];
+    return `<div class="row">
+      <div class="chk ${c.done?'done':''}" onclick="togChore(${c.id})" role="checkbox" aria-checked="${c.done}">
+        ${c.done ? '<i class="ti ti-check" style="color:#fff;font-size:11px"></i>' : ''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:${isMe?'700':'400'};color:${c.done?'var(--tx3)':'var(--tx)'};text-decoration:${c.done?'line-through':'none'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${c.name}${isMe ? ' <span class="badge-you">Tú</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--tx3)">${ZONES[c.zone]||c.zone} · ${c.min} min · ${u.name}${absent ? ' <span style="color:var(--al);font-weight:600">· fuera</span>' : ''}</div>
+      </div>
+      <div class="av ${u.cls}" style="width:26px;height:26px;font-size:10px;flex-shrink:0">${u.short}</div>
+    </div>`;
+  }).join('');
+}
+
+function togChore(id) {
+  const c = st.chores.find(x => x.id === id);
+  if (c) { c.done = !c.done; save(); rChores(); rHero(); toast(c.done ? '✓ Tarea completada' : 'Tarea reabierta'); }
+}
+
+function togAbs(u) {
+  st.abs[u] = !st.abs[u];
+  document.getElementById('abs-'+u).classList.toggle('on', st.abs[u]);
+  save(); rChores();
+  toast(USERS[u].name + (st.abs[u] ? ' marcado como fuera' : ' de vuelta en el piso'));
+}
+
+// ─── GASTOS ───────────────────────────────────────────────────────
+function calcBal() {
+  const t = {E:0, A:0, U:0};
+  st.gastos.forEach(g => {
+    const sh = g.amt / 3;
+    Object.keys(USERS).forEach(u => { t[u] += (u === g.payer ? g.amt : 0) - sh; });
+  });
+  return t;
+}
+
+function rBal() {
+  const el = document.getElementById('bal-cards');
+  if (!el) return;
+  const t = calcBal();
+  el.innerHTML = Object.keys(USERS).map(u => {
+    const v = t[u];
+    const pct = Math.min(100, Math.abs(v)/60*100);
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div class="av ${USERS[u].cls}">${USERS[u].short}</div>
+        <div style="flex:1;font-weight:700">${USERS[u].name}${u===me?' <span class="badge-you">Tú</span>':''}</div>
+        <div style="font-size:18px;font-weight:700;color:${v>=0?'var(--g)':'var(--red)'}">${v>=0?'+':''}${v.toFixed(2)}€</div>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:5px">${v>0.5?'Le deben':v<-0.5?'Debe':'Al día'}</div>
+      <div class="bbar"><div class="bfill ${v<0?'neg':''}" style="width:${pct.toFixed(0)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function rHist() {
+  const el = document.getElementById('exp-hist');
+  if (!el) return;
+  if (st.gastos.length === 0) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-receipt-off"></i><div class="empty-title">Sin gastos aún</div></div>';
+    return;
+  }
+  const icons = {comida:'ti-shopping-cart',hogar:'ti-home',ocio:'ti-confetti',otro:'ti-dots'};
+  el.innerHTML = st.gastos.slice().reverse().map(g => `
+    <div class="exp-row">
+      <div class="eicon"><i class="ti ${icons[g.cat]||'ti-receipt'}" style="color:var(--sl)"></i></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.desc}</div>
+        <div style="font-size:11px;color:var(--tx3)">${g.date} · pagó ${USERS[g.payer].name} · ${(g.amt/3).toFixed(2)}€ c/u</div>
+      </div>
+      <div style="font-weight:700;font-size:14px;flex-shrink:0">${g.amt.toFixed(2)}€</div>
+    </div>`).join('');
+}
+
+function addGasto() {
+  const desc = document.getElementById('g-desc').value.trim();
+  const amt = parseFloat(document.getElementById('g-amt').value);
+  const payer = document.getElementById('g-payer').value;
+  const cat = document.getElementById('g-cat').value;
+  if (!desc || !amt || amt <= 0) { toast('Rellena todos los campos'); return; }
+  const dateStr = fmtDate(new Date());
+  st.gastos.push({id: st.nextGid++, desc, amt, payer, date: dateStr, cat});
+  save(); closeM('m-gasto'); rBal(); rHist(); rHero();
+  document.getElementById('g-desc').value = '';
+  document.getElementById('g-amt').value = '';
+  toast(`Añadido · ${amt.toFixed(2)}€ · ${(amt/3).toFixed(2)}€ c/u`);
+}
+
+function liquidar() {
+  if (!confirm('¿Liquidar todas las cuentas? Se borrarán todos los gastos registrados.')) return;
+  st.gastos = []; save(); rBal(); rHist(); rHero(); toast('Cuentas liquidadas entre los tres');
+}
+
+// ─── ESCANEAR TICKET ──────────────────────────────────────────────
+async function scanTicket(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const out = document.getElementById('scan-out');
+  out.innerHTML = `<div class="pulse"><div class="pline" style="width:85%"></div><div class="pline" style="width:65%"></div><div class="pline" style="width:78%"></div><div style="font-size:12px;color:var(--tx3);margin-top:6px">Leyendo el ticket — la imagen se descartará al terminar...</div></div>`;
+
+  try {
+    // Convertir a base64
+    const b64 = await new Promise((ok, err) => {
+      const r = new FileReader();
+      r.onload = () => ok(r.result.split(',')[1]);
+      r.onerror = err;
+      r.readAsDataURL(file);
+    });
+    const mediaType = file.type || 'image/jpeg';
+
+    // Llamada a Claude — imagen se procesa en memoria, no se almacena
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:mediaType, data:b64}},
+            {type:'text', text:`Eres un asistente que lee tickets de compra. Extrae la información de este ticket y responde SOLO con JSON válido, sin markdown, sin texto adicional:
+{"descripcion":"nombre del establecimiento o tipo de compra","importe_total":0.00,"fecha":"DD/MM/YYYY o vacío si no se ve","items_principales":"lista breve de 2-3 productos principales separados por coma, o vacío"}
+Si no es un ticket de compra responde: {"error":"no es ticket"}`}
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    // Imagen ya procesada — la variable b64 sale de scope, el GC la limpiará
+    let txt = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '{}';
+    txt = txt.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(txt);
+
+    if (parsed.error) {
+      out.innerHTML = `<div style="color:var(--al);font-size:13px;padding:8px 0">No he podido leer un ticket en esa imagen. Prueba con otra foto más clara.</div>`;
+      e.target.value = '';
+      return;
+    }
+
+    // Mostrar resultado y opciones
+    out.innerHTML = `<div class="scan-result">
+      <div style="font-weight:700;font-size:15px;margin-bottom:2px">${parsed.descripcion || 'Ticket escaneado'}</div>
+      ${parsed.fecha ? `<div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${parsed.fecha}</div>` : ''}
+      ${parsed.items_principales ? `<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">${parsed.items_principales}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:22px;font-weight:700;color:var(--g)">${(parsed.importe_total||0).toFixed(2)}€</span>
+        <span style="font-size:13px;color:var(--tx3)">${((parsed.importe_total||0)/3).toFixed(2)}€ c/u</span>
+      </div>
+      <div style="font-size:11px;color:var(--g);margin-bottom:10px;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-shield-check"></i> Imagen descartada — solo se guardan los datos de texto
+      </div>
+      <div style="margin-bottom:8px">
+        <select class="inp" id="scan-payer" style="margin-bottom:0">
+          <option value="E">Pagó Eliseo</option>
+          <option value="A">Pagó Antonio</option>
+          <option value="U">Pagó Urbano</option>
+        </select>
+      </div>
+      <button class="btn btn-g" onclick="addScannedGasto('${(parsed.descripcion||'Ticket').replace(/'/g,"\\'")}',${parsed.importe_total||0})" style="font-size:13px">
+        <i class="ti ti-plus"></i> Añadir a gastos compartidos
+      </button>
+    </div>`;
+    // Seleccionar automáticamente al usuario actual
+    document.getElementById('scan-payer').value = me;
+
+  } catch(err) {
+    out.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0"><i class="ti ti-wifi-off"></i> Error de conexión. Comprueba el acceso a internet e inténtalo de nuevo.</div>`;
+  }
+  // Limpiar el input para permitir volver a escanear
+  e.target.value = '';
+}
+
+function addScannedGasto(desc, amt) {
+  const payer = document.getElementById('scan-payer')?.value || me;
+  const dateStr = fmtDate(new Date());
+  st.gastos.push({id: st.nextGid++, desc, amt, payer, date: dateStr, cat:'comida'});
+  save(); rBal(); rHist(); rHero();
+  document.getElementById('scan-out').innerHTML = `<div style="color:var(--g);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:6px"><i class="ti ti-check"></i> Gasto añadido correctamente</div>`;
+  toast('Ticket registrado · ' + amt.toFixed(2) + '€');
+}
+
+// ─── ROTACIÓN ─────────────────────────────────────────────────────
+function rRot() {
+  const el = document.getElementById('rot-table');
+  if (!el) return;
+  const zones = ['Pasillo','Baño','Cocina','Salón'];
+  const users = ['E','A','U'];
+  const weeks = ['Semana actual','Sem. siguiente','Sem. +2','Sem. +3'];
+  el.innerHTML = weeks.map((w, wi) => `
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">${w}</div>
+      ${zones.map((z, zi) => {
+        const u = users[(zi + wi) % 3];
+        const av = USERS[u];
+        return `<div class="row">
+          <div class="av ${av.cls}" style="width:24px;height:24px;font-size:9px">${av.short}</div>
+          <div style="flex:1;font-size:14px">${z}</div>
+          <div style="font-size:13px;font-weight:${u===me?'700':'400'};color:${u===me?'var(--g)':'var(--tx2)'}">${av.name}${u===me?' ★':''}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// ─── MANUAL ───────────────────────────────────────────────────────
+function rGuias() {
+  const el = document.getElementById('guide-list');
+  if (!el) return;
+  const list = currentZoneFilter === 'todas' ? st.guias : st.guias.filter(g => g.zone === currentZoneFilter);
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-book-off"></i><div class="empty-title">Sin fichas${currentZoneFilter!=='todas'?' en esta zona':''}</div><div class="empty-sub">Añade la primera ficha con el botón de abajo</div></div>`;
+    return;
+  }
+  const znames = {pasillo:'Pasillo / corredor',cocina:'Cocina',bano:'Baño',salon:'Salón'};
+  el.innerHTML = list.map(g => `
+    <div class="guide-card">
+      ${g.photo
+        ? `<img src="${g.photo}" style="width:100%;height:120px;object-fit:cover;display:block" alt="${g.name}">`
+        : `<div class="guide-img-placeholder"><i class="ti ti-camera-off"></i> Sin foto</div>`
+      }
+      <div class="guide-body">
+        <div class="guide-zone">${znames[g.zone]||g.zone}</div>
+        <div class="guide-name">${g.name}</div>
+        <div class="guide-desc">${g.desc}</div>
+        ${g.prod ? `<div class="guide-prod"><i class="ti ti-package" style="color:var(--al)"></i> ${g.prod}</div>` : ''}
+        <button onclick="delGuia(${g.id})" style="margin-top:9px;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px">
+          <i class="ti ti-trash"></i> Eliminar ficha
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function filterZone(z, btn) {
+  currentZoneFilter = z;
+  document.querySelectorAll('#zone-chips .chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  rGuias();
+}
+
+let guiaPhotoB64 = '';
+
+function previewGuia(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    guiaPhotoB64 = reader.result;
+    const drop = document.getElementById('gi-drop');
+    drop.innerHTML = `<img src="${guiaPhotoB64}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;display:block">`;
+  };
+  reader.readAsDataURL(f);
+}
+
+function saveGuia() {
+  const name = document.getElementById('gi-name').value.trim();
+  const zone = document.getElementById('gi-zone').value;
+  const desc = document.getElementById('gi-desc').value.trim();
+  const prod = document.getElementById('gi-prod').value.trim();
+  if (!name || !desc) { toast('Rellena al menos el nombre y la descripción'); return; }
+  st.guias.push({id: st.nextGuia++, name, zone, desc, prod, photo: guiaPhotoB64});
+  guiaPhotoB64 = '';
+  save(); closeM('m-guia'); rGuias(); rStats();
+  document.getElementById('gi-name').value = '';
+  document.getElementById('gi-desc').value = '';
+  document.getElementById('gi-prod').value = '';
+  document.getElementById('gi-drop').innerHTML = `<i class="ti ti-camera" style="font-size:26px;color:var(--tx3);display:block;margin-bottom:4px"></i><div style="font-size:13px;color:var(--tx3)">Toca para añadir foto</div>`;
+  document.getElementById('gi-photo').value = '';
+  toast('Ficha guardada en el manual');
+}
+
+function delGuia(id) {
+  if (!confirm('¿Eliminar esta ficha del manual?')) return;
+  st.guias = st.guias.filter(g => g.id !== id);
+  save(); rGuias(); rStats();
+  toast('Ficha eliminada');
+}
+
+// ─── ESTADÍSTICAS ─────────────────────────────────────────────────
+function rStats() {
+  setEl('stat-done', st.chores.filter(c => c.done).length + ' completadas');
+  setEl('stat-guias', st.guias.length + ' fichas');
+  setEl('stat-exp', st.gastos.length + ' registrados');
+}
+
+// ─── ASISTENTE IA ─────────────────────────────────────────────────
+async function askAI(q) {
+  const out = document.getElementById('ai-out');
+  out.innerHTML = `<div class="pulse"><div class="pline" style="width:88%"></div><div class="pline" style="width:70%"></div><div class="pline" style="width:82%"></div><div style="font-size:11px;color:var(--tx3);margin-top:6px">Consultando el método correcto...</div></div>`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: `Eres un experto en limpieza del hogar en España. Responde en español, de forma breve y práctica, sin introducción. Máximo 6 pasos cortos. Pregunta: ${q}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || 'Sin respuesta';
+    out.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--g)">$1</strong>');
+  } catch(e) {
+    out.innerHTML = `<div style="color:var(--red)"><i class="ti ti-wifi-off"></i> Error de conexión. Comprueba el internet e inténtalo de nuevo.</div>`;
+  }
+}
+
+function askAICustom() {
+  const v = document.getElementById('ai-inp').value.trim();
+  if (v) { askAI(v); document.getElementById('ai-inp').value = ''; }
+}
+
+// ─── CHIPS / TABS INTERNOS ────────────────────────────────────────
+function switchCt(id, btn) {
+  ['semana','rotacion','asistente'].forEach(t => {
+    document.getElementById('ct-'+t).style.display = t === id ? 'block' : 'none';
+  });
+  document.querySelectorAll('#chore-chips .chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function switchEt(id, btn) {
+  ['balance','historial','escanear'].forEach(t => {
+    document.getElementById('et-'+t).style.display = t === id ? 'block' : 'none';
+  });
+  document.querySelectorAll('#exp-chips .chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// ─── MODALES ──────────────────────────────────────────────────────
+function openM(id) { document.getElementById(id).classList.add('on'); }
+function closeM(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.mbg').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('on'); });
+});
+
+// ─── TAREAS MODAL ─────────────────────────────────────────────────
+function addTarea() {
+  const name = document.getElementById('t-name').value.trim();
+  const who = document.getElementById('t-who').value;
+  const zone = document.getElementById('t-zone').value;
+  const min = parseInt(document.getElementById('t-min').value) || 15;
+  if (!name) { toast('Escribe el nombre de la tarea'); return; }
+  const finalWho = who === 'auto' ? ['E','A','U'][st.nextCid % 3] : who;
+  st.chores.push({id: st.nextCid++, name, who: finalWho, done: false, zone, min});
+  save(); closeM('m-tarea'); rChores(); rHero();
+  document.getElementById('t-name').value = '';
+  document.getElementById('t-min').value = '';
+  toast('Tarea añadida');
+}
+
+// ─── COMPARTIR ────────────────────────────────────────────────────
+function copyURL() {
+  try {
+    navigator.clipboard.writeText(window.location.href);
+    toast('Enlace copiado — compártelo con Antonio y Urbano');
+  } catch(e) {
+    toast('Copia la URL de la barra del navegador');
+  }
+}
+
+// ─── UTILIDADES ───────────────────────────────────────────────────
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function fmtDate(d) {
+  const months = 'ene feb mar abr may jun jul ago sep oct nov dic'.split(' ');
+  return d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+// ─── FECHA CABECERO ───────────────────────────────────────────────
+(function() {
+  const d = new Date();
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('hsub').textContent = `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
+})();
+
+// ─── ARRANQUE ─────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
