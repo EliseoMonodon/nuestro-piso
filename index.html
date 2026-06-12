@@ -1,3 +1,8 @@
+<!--
+  Nuestro Piso — gestión compartida del hogar
+  Eliseo, Antonio y Urbano
+  Creado por Eli · IdeasVagas
+-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,6 +21,7 @@
 :root{
   --g:#2D6A4F;--gl:#52B788;--gp:#D8F3DC;
   --a:#9C4A11;--al:#E07B39;--ap:#FEF0E7;
+  --ul:#8B5CF6;--ulp:#EDE9FE;
   --sp:#F5F1EB;--s:#44403A;--sl:#8A8078;
   --bg:#FAF8F4;--card:#fff;--bd:#E5DDD5;
   --tx:#241E17;--tx2:#6B5A48;--tx3:#A89888;
@@ -117,7 +123,6 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 <body>
 
 <div id="toast" class="toast"></div>
-<div id="sync-banner" class="syncing-banner">Sincronizando...</div>
 
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:6px">
@@ -137,10 +142,11 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 <div id="pg-home" class="pg on">
   <div class="sec">
     <div class="hero">
-      <div class="hero-lbl">Esta semana te toca</div>
+      <div class="hero-lbl" id="hero-lbl">Esta semana te toca</div>
       <div class="hero-title" id="hero-text">Cargando...</div>
       <div id="hero-tags"></div>
     </div>
+    <div id="home-cal-card"></div>
     <div class="sgrid">
       <div class="scard"><div class="snum" id="s-done">—</div><div class="slbl">hechas</div></div>
       <div class="scard"><div class="snum" id="s-pend">—</div><div class="slbl">pendientes</div></div>
@@ -164,31 +170,34 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
   <div class="sec">
     <div class="chips" id="chore-chips">
       <button class="chip on" onclick="switchCt('semana',this)">Esta semana</button>
+      <button class="chip" onclick="switchCt('calendario',this)">Calendario</button>
       <button class="chip" onclick="switchCt('rotacion',this)">Rotación</button>
     </div>
     <div id="ct-semana">
-      <div class="lbl">Tareas · semana actual</div>
+      <div class="lbl" id="chore-week-lbl">Tareas · semana actual</div>
       <div class="card" id="chore-list"><div class="empty"><i class="ti ti-loader" style="animation:spin 1s linear infinite"></i><div class="empty-title">Cargando...</div></div></div>
       <button class="btn btn-s" onclick="openM('m-tarea')" style="margin-bottom:10px"><i class="ti ti-plus"></i> Añadir tarea</button>
       <div class="lbl">Ausencias esta semana</div>
-      <div class="card">
-        <div class="toggle-row" onclick="togAbs('E')">
-          <div class="av av-e" style="width:28px;height:28px;font-size:11px">El</div>
-          <div style="flex:1;font-size:14px">Eliseo fuera</div>
-          <div class="tog" id="abs-E"></div>
-        </div>
-        <div class="toggle-row" onclick="togAbs('A')">
-          <div class="av av-a" style="width:28px;height:28px;font-size:11px">An</div>
-          <div style="flex:1;font-size:14px">Antonio fuera</div>
-          <div class="tog" id="abs-A"></div>
-        </div>
-        <div class="toggle-row" onclick="togAbs('U')">
-          <div class="av av-u" style="width:28px;height:28px;font-size:11px">Ur</div>
-          <div style="flex:1;font-size:14px">Urbano fuera</div>
-          <div class="tog" id="abs-U"></div>
-        </div>
-        <div style="font-size:12px;color:var(--tx3);margin-top:8px"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan</div>
+      <div class="card" id="week-abs-card">
+        <div style="font-size:12px;color:var(--tx3);margin-top:0"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan</div>
       </div>
+    </div>
+    <div id="ct-calendario" style="display:none">
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 8px;margin-bottom:10px">
+        <button class="btn btn-s" onclick="calShift(-1)" style="width:auto;padding:8px 12px"><i class="ti ti-chevron-left"></i></button>
+        <div style="font-weight:700;font-size:15px;text-transform:capitalize" id="cal-title">—</div>
+        <button class="btn btn-s" onclick="calShift(1)" style="width:auto;padding:8px 12px"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="card" style="padding:10px">
+        <div id="cal-grid"></div>
+        <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--tx2);flex-wrap:wrap">
+          <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--al);margin-right:4px;vertical-align:middle"></span>Ausencia</span>
+          <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--ul,#8B5CF6);margin-right:4px;vertical-align:middle"></span>Visita</span>
+        </div>
+      </div>
+      <button class="btn btn-g" onclick="openM('m-evento')" style="margin-bottom:10px"><i class="ti ti-calendar-plus"></i> Añadir ausencia o visita</button>
+      <div class="lbl">Próximos eventos</div>
+      <div class="card" id="cal-list"></div>
     </div>
     <div id="ct-rotacion" style="display:none">
       <div class="lbl">Próximas 4 semanas</div>
@@ -268,6 +277,9 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
       <div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:10px">Comparte la URL con Antonio y Urbano. Cada uno toca su inicial en el cabecero. Los datos se sincronizan entre todos en tiempo real.</div>
       <button class="btn btn-g" onclick="copyURL()" style="font-size:13px"><i class="ti ti-copy"></i> Copiar enlace</button>
     </div>
+    <div style="text-align:center;padding:18px 0 6px;font-size:12px;color:var(--tx3)">
+      Hecho con <i class="ti ti-heart" style="color:var(--al)"></i> por <strong style="color:var(--tx2)">Eli</strong> para el piso · <span style="opacity:.7">IdeasVagas</span>
+    </div>
   </div>
 </div>
 
@@ -328,6 +340,32 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
     <div class="g2">
       <button class="btn btn-s" onclick="closeM('m-tarea')">Cancelar</button>
       <button class="btn btn-g" onclick="addTarea()"><i class="ti ti-plus"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVENTO (ausencia/visita) -->
+<div class="mbg" id="m-evento">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Ausencia o visita</div>
+    <select class="inp" id="ev-tipo">
+      <option value="ausencia">Voy a estar fuera</option>
+      <option value="visita">Voy a tener una visita</option>
+    </select>
+    <select class="inp" id="ev-who">
+      <option value="E">Eliseo</option>
+      <option value="A">Antonio</option>
+      <option value="U">Urbano</option>
+    </select>
+    <div class="lbl" style="margin-top:2px">Desde</div>
+    <input type="date" class="inp" id="ev-start">
+    <div class="lbl" style="margin-top:2px">Hasta</div>
+    <input type="date" class="inp" id="ev-end">
+    <input type="text" class="inp" id="ev-note" placeholder="Nota (opcional, ej. 'Viene mi hermana')">
+    <div class="g2">
+      <button class="btn btn-s" onclick="closeM('m-evento')">Cancelar</button>
+      <button class="btn btn-g" onclick="addEvento()"><i class="ti ti-calendar-plus"></i> Guardar</button>
     </div>
   </div>
 </div>
@@ -414,7 +452,8 @@ const DEFAULT = {
     {id:4,name:'Trapos de cocina',zone:'cocina',desc:'Lavar a 60ºC mínimo para desinfectar. Cambiar semanalmente. Colgarlos siempre, nunca húmedos encima de la encimera.',prod:'Lavadora a 60ºC',photo:''},
     {id:5,name:'Microondas',zone:'cocina',desc:'Bol con agua y zumo de limón, máxima potencia 3 min. Reposar 2 min sin abrir. El vapor afloja las manchas.',prod:'Limón o vinagre blanco del armario',photo:''},
   ],
-  nextCid:10, nextGid:1, nextGuia:6,
+  nextCid:10, nextGid:1, nextGuia:6, nextEid:1,
+  eventos:[],
 };
 
 let me = localStorage.getItem('piso-me') || 'E';
@@ -519,19 +558,61 @@ function updateUserUI() {
 // ─── RENDER ───────────────────────────────────────────────────────
 function render() {
   updateUserUI();
-  rHero(); rChores(); rBal(); rHist(); rRot(); rGuias(); rStats();
-  // sync abs toggles
-  Object.keys(USERS).forEach(u => {
-    const t = document.getElementById('abs-'+u);
-    if (t) t.classList.toggle('on', !!st.abs[u]);
-  });
+  rHero(); rChores(); rBal(); rHist(); rRot(); rGuias(); rStats(); rHomeCal(); rWeekAbs();
+}
+
+function rWeekAbs() {
+  const el = document.getElementById('week-abs-card');
+  const lbl = document.getElementById('chore-week-lbl');
+  if (!el) return;
+  const wk = cleaningWeekRange(0);
+  if (lbl) lbl.textContent = `Tareas · ${fmtRange(wk.start, wk.end)}`;
+  const absent = ['E','A','U'].filter(u => isAbsentDuringWeek(u, 0));
+  const baseInfo = '<div style="font-size:12px;color:var(--tx3)"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan</div>';
+  if (!absent.length) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--tx2);margin-bottom:8px"><i class="ti ti-check" style="color:var(--g)"></i> Los tres estáis disponibles esta semana</div>${baseInfo}`;
+    return;
+  }
+  el.innerHTML = absent.map(u => {
+    const usr = USERS[u];
+    const ev = (st.eventos||[]).find(e => e.who===u && e.type==='ausencia');
+    return `<div class="row">
+      <div class="av ${usr.cls}" style="width:28px;height:28px;font-size:11px">${usr.short}</div>
+      <div style="flex:1;font-size:14px">${usr.name} fuera${ev?' · '+fmtRange(ev.start,ev.end):''}</div>
+      <span class="pill pill-a">Reasignado</span>
+    </div>`;
+  }).join('') + baseInfo;
+}
+
+function rHomeCal() {
+  const el = document.getElementById('home-cal-card');
+  if (!el) return;
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const today = (st.eventos||[]).filter(e => todayStr >= e.start && todayStr <= e.end);
+  if (!today.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card" style="margin-bottom:10px">
+    <div class="lbl" style="margin-bottom:6px">Hoy en el piso</div>
+    ${today.map(e => {
+      const u = USERS[e.who];
+      const isVisita = e.type==='visita';
+      const icon = isVisita ? 'ti-user-plus' : 'ti-plane-departure';
+      const color = isVisita ? 'var(--ul)' : 'var(--al)';
+      return `<div class="row">
+        <i class="ti ${icon}" style="color:${color};font-size:18px;flex-shrink:0"></i>
+        <div style="flex:1;font-size:13px">${u.name} ${isVisita?'tiene visita':'está fuera'}${e.note?' · '+e.note:''}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
 function rHero() {
-  const mine = st.chores.filter(c => c.who === me && !c.done);
+  const mine = st.chores.filter(c => resolveAssignee(c.who,0) === me && !c.done);
   const hero = document.getElementById('hero-text');
   const tags = document.getElementById('hero-tags');
+  const lbl = document.getElementById('hero-lbl');
   if (!hero) return;
+  const wk = cleaningWeekRange(0);
+  if (lbl) lbl.textContent = `Esta semana (${fmtRange(wk.start, wk.end)}) te toca`;
   if (mine.length === 0) {
     hero.textContent = '¡Todo al día esta semana!';
     tags.innerHTML = '<span class="hero-pill"><i class="ti ti-confetti"></i> Sin pendientes</span>';
@@ -558,7 +639,9 @@ function rChores() {
     return;
   }
   el.innerHTML = st.chores.map(c => {
-    const u = USERS[c.who]; const isMe = c.who === me;
+    const finalWho = resolveAssignee(c.who, 0);
+    const reassigned = finalWho !== c.who;
+    const u = USERS[finalWho]; const isMe = finalWho === me;
     return `<div class="row">
       <div class="chk ${c.done?'done':''}" onclick="togChore(${c.id})">
         ${c.done?'<i class="ti ti-check" style="color:#fff;font-size:11px"></i>':''}
@@ -567,7 +650,7 @@ function rChores() {
         <div style="font-size:14px;font-weight:${isMe?'700':'400'};color:${c.done?'var(--tx3)':'var(--tx)'};text-decoration:${c.done?'line-through':'none'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           ${c.name}${isMe?' <span class="badge-you">Tú</span>':''}
         </div>
-        <div style="font-size:11px;color:var(--tx3)">${ZONES[c.zone]||c.zone} · ${c.min} min · ${u.name}${st.abs[c.who]?' <span style="color:var(--al);font-weight:600">· fuera</span>':''}</div>
+        <div style="font-size:11px;color:var(--tx3)">${ZONES[c.zone]||c.zone} · ${c.min} min · ${u.name}${reassigned?` <span style="color:var(--ul);font-weight:600">· reasignada (${USERS[c.who].name} fuera)</span>`:''}</div>
       </div>
       <div class="av ${u.cls}" style="width:26px;height:26px;font-size:10px;flex-shrink:0">${u.short}</div>
     </div>`;
@@ -579,11 +662,184 @@ function togChore(id) {
   if (c) { c.done=!c.done; scheduleSave(); rChores(); rHero(); toast(c.done?'✓ Tarea completada':'Tarea reabierta'); }
 }
 
-function togAbs(u) {
-  st.abs[u] = !st.abs[u];
-  document.getElementById('abs-'+u).classList.toggle('on', st.abs[u]);
-  scheduleSave(); rChores();
-  toast(USERS[u].name + (st.abs[u]?' marcado como fuera':' de vuelta'));
+// ─── CALENDARIO ───────────────────────────────────────────────────
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+
+function calShift(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+function dateStr(y,m,d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// ─── SEMANA DE LIMPIEZA (sábado a viernes) ─────────────────────────
+// offset 0 = semana actual, 1 = siguiente, etc.
+function cleaningWeekRange(offset=0) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=domingo,...,6=sábado
+  // días desde el último sábado (si hoy es sábado, 0)
+  const daysSinceSat = (dow + 1) % 7; // sáb=6->0, dom=0->1, lun=1->2 ... vie=5->6
+  const start = new Date(now);
+  start.setDate(now.getDate() - daysSinceSat + offset*7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return {
+    start: dateStr(start.getFullYear(), start.getMonth(), start.getDate()),
+    end: dateStr(end.getFullYear(), end.getMonth(), end.getDate()),
+    startDate: start, endDate: end
+  };
+}
+
+// Índice absoluto de semana (para que la rotación avance de forma estable cada semana real)
+function weekIndex(offset=0) {
+  const {startDate} = cleaningWeekRange(offset);
+  const epoch = new Date(2024,0,6); // un sábado de referencia
+  const diffDays = Math.round((startDate - epoch) / 86400000);
+  return Math.floor(diffDays / 7);
+}
+
+function fmtRange(start, end) {
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const [sy,sm,sd] = start.split('-').map(Number);
+  const [ey,em,ed] = end.split('-').map(Number);
+  if (sm===em) return `${sd}–${ed} ${months[sm-1]}`;
+  return `${sd} ${months[sm-1]} – ${ed} ${months[em-1]}`;
+}
+
+// ¿Está esta persona ausente durante (parte de) esta semana de limpieza?
+function isAbsentDuringWeek(user, offset=0) {
+  const {start, end} = cleaningWeekRange(offset);
+  return (st.eventos||[]).some(e => e.who===user && e.type==='ausencia' && e.start <= end && e.end >= start);
+}
+
+// Para una semana dada, devuelve el "who" final de una tarea, reasignando si está ausente
+function resolveAssignee(originalWho, weekOffset=0) {
+  if (!isAbsentDuringWeek(originalWho, weekOffset)) return originalWho;
+  const others = ['E','A','U'].filter(u => u !== originalWho);
+  // Si ambos están disponibles, alterna según el índice de semana para repartir equitativamente
+  const available = others.filter(u => !isAbsentDuringWeek(u, weekOffset));
+  if (available.length === 0) return originalWho; // los 3 fuera, no se reasigna
+  if (available.length === 1) return available[0];
+  return available[(weekIndex(weekOffset) + originalWho.charCodeAt(0)) % 2];
+}
+
+function eventsOnDay(ds) {
+  if (!st.eventos) return [];
+  return st.eventos.filter(e => ds >= e.start && ds <= e.end);
+}
+
+function renderCal() {
+  const grid = document.getElementById('cal-grid');
+  const title = document.getElementById('cal-title');
+  if (!grid) return;
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  title.textContent = `${months[calMonth]} ${calYear}`;
+
+  const firstDay = new Date(calYear, calMonth, 1);
+  // Lunes=0 ... Domingo=6
+  let startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">';
+  ['L','M','X','J','V','S','D'].forEach(d => {
+    html += `<div style="text-align:center;font-size:10px;font-weight:700;color:var(--tx3);padding:2px 0">${d}</div>`;
+  });
+  html += '</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+
+  for (let i=0; i<startOffset; i++) html += '<div></div>';
+
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = dateStr(calYear, calMonth, d);
+    const evs = eventsOnDay(ds);
+    const isToday = ds === todayStr;
+    let dots = '';
+    evs.slice(0,3).forEach(e => {
+      const color = e.type==='ausencia' ? 'var(--al)' : 'var(--ul)';
+      dots += `<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${color};margin:0 1px"></span>`;
+    });
+    html += `<div onclick="calDayClick('${ds}')" style="text-align:center;padding:6px 2px;border-radius:8px;cursor:pointer;background:${isToday?'var(--g)':'transparent'};color:${isToday?'#fff':'var(--tx)'};font-weight:${isToday?'700':'400'};font-size:13px;min-height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+      <span>${d}</span><div style="height:6px">${dots}</div>
+    </div>`;
+  }
+  html += '</div>';
+  grid.innerHTML = html;
+
+  renderCalList();
+}
+
+function calDayClick(ds) {
+  const evs = eventsOnDay(ds);
+  if (!evs.length) {
+    // Pre-fill modal with this date
+    document.getElementById('ev-start').value = ds;
+    document.getElementById('ev-end').value = ds;
+    openM('m-evento');
+    return;
+  }
+  const lines = evs.map(e => `${USERS[e.who].name} — ${e.type==='ausencia'?'fuera':'visita'}${e.note?': '+e.note:''} (${e.start} a ${e.end})`).join('\n');
+  if (confirm(lines + '\n\n¿Eliminar estos eventos de este día?')) {
+    st.eventos = st.eventos.filter(e => !(ds>=e.start && ds<=e.end));
+    scheduleSave(); renderCal();
+    toast('Eventos eliminados');
+  }
+}
+
+function renderCalList() {
+  const el = document.getElementById('cal-list');
+  if (!el) return;
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const upcoming = (st.eventos||[])
+    .filter(e => e.end >= todayStr)
+    .sort((a,b) => a.start.localeCompare(b.start));
+  if (!upcoming.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i><div class="empty-title">Sin eventos próximos</div><div class="empty-sub">Añade ausencias o visitas</div></div>';
+    return;
+  }
+  el.innerHTML = upcoming.map(e => {
+    const u = USERS[e.who];
+    const isVisita = e.type==='visita';
+    const icon = isVisita ? 'ti-user-plus' : 'ti-plane-departure';
+    const color = isVisita ? 'var(--ul)' : 'var(--al)';
+    const range = e.start === e.end ? fmtShort(e.start) : `${fmtShort(e.start)} – ${fmtShort(e.end)}`;
+    return `<div class="row">
+      <div class="av ${u.cls}" style="width:30px;height:30px;font-size:11px">${u.short}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${u.name} ${isVisita?'recibe visita':'estará fuera'}</div>
+        <div style="font-size:11px;color:var(--tx3)">${range}${e.note?' · '+e.note:''}</div>
+      </div>
+      <i class="ti ${icon}" style="color:${color};font-size:18px"></i>
+    </div>`;
+  }).join('');
+}
+
+function fmtShort(ds) {
+  const [y,m,d] = ds.split('-');
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+}
+
+function addEvento() {
+  const tipo = document.getElementById('ev-tipo').value;
+  const who = document.getElementById('ev-who').value;
+  const start = document.getElementById('ev-start').value;
+  const end = document.getElementById('ev-end').value;
+  const note = document.getElementById('ev-note').value.trim();
+  if (!start || !end) { toast('Selecciona las fechas'); return; }
+  if (end < start) { toast('La fecha final no puede ser antes de la inicial'); return; }
+  if (!st.eventos) st.eventos = [];
+  if (!st.nextEid) st.nextEid = 1;
+  st.eventos.push({id: st.nextEid++, who, type: tipo, start, end, note});
+  scheduleSave(); closeM('m-evento'); renderCal();
+  document.getElementById('ev-note').value = '';
+  document.getElementById('ev-start').value = '';
+  document.getElementById('ev-end').value = '';
+  toast(tipo==='ausencia' ? 'Ausencia añadida al calendario' : 'Visita añadida al calendario');
 }
 
 function addTarea() {
@@ -669,19 +925,25 @@ function rRot() {
   if (!el) return;
   const zones = ['Pasillo','Baño','Cocina','Salón'];
   const users = ['E','A','U'];
-  const weeks = ['Semana actual','Sem. siguiente','Sem. +2','Sem. +3'];
-  el.innerHTML = weeks.map((w,wi) => `
+  el.innerHTML = [0,1,2,3].map((wi) => {
+    const wk = cleaningWeekRange(wi);
+    const label = wi===0 ? `Esta semana · ${fmtRange(wk.start,wk.end)}` : fmtRange(wk.start,wk.end);
+    return `
     <div class="card" style="margin-bottom:10px">
-      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">${w}</div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">${label}</div>
       ${zones.map((z,zi) => {
-        const u = users[(zi+wi)%3]; const av = USERS[u];
+        const baseU = users[(zi+weekIndex(wi))%3];
+        const u = resolveAssignee(baseU, wi);
+        const av = USERS[u];
+        const reassigned = u !== baseU;
         return `<div class="row">
           <div class="av ${av.cls}" style="width:24px;height:24px;font-size:9px">${av.short}</div>
           <div style="flex:1;font-size:14px">${z}</div>
-          <div style="font-size:13px;font-weight:${u===me?'700':'400'};color:${u===me?'var(--g)':'var(--tx2)'}">${av.name}${u===me?' ★':''}</div>
+          <div style="font-size:13px;font-weight:${u===me?'700':'400'};color:${u===me?'var(--g)':'var(--tx2)'}">${av.name}${u===me?' ★':''}${reassigned?' <span style="color:var(--ul);font-size:11px">(reasignada)</span>':''}</div>
         </div>`;
       }).join('')}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ─── MANUAL ───────────────────────────────────────────────────────
@@ -697,14 +959,18 @@ function rGuias() {
   el.innerHTML = list.map(g => `
     <div class="guide-card">
       ${g.photo
-        ? `<img src="${g.photo}" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy">`
-        : `<div class="guide-img-ph"><i class="ti ti-camera-off"></i> Sin foto</div>`}
+        ? `<img src="${g.photo}" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" onclick="document.getElementById('gi-photo-${g.id}').click()">`
+        : `<div class="guide-img-ph" style="cursor:pointer" onclick="document.getElementById('gi-photo-${g.id}').click()"><i class="ti ti-camera-plus"></i> Toca para añadir foto</div>`}
+      <input type="file" id="gi-photo-${g.id}" accept="image/*" style="display:none" onchange="addPhotoToGuia(event, ${g.id})">
       <div class="guide-body">
         <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gl);margin-bottom:3px">${znames[g.zone]||g.zone}</div>
         <div style="font-size:14px;font-weight:700;margin-bottom:5px">${g.name}</div>
         <div style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:6px">${g.desc}</div>
         ${g.prod?`<div style="font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:4px"><i class="ti ti-package" style="color:var(--al)"></i> ${g.prod}</div>`:''}
-        <button onclick="delGuia(${g.id})" style="margin-top:9px;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px"><i class="ti ti-trash"></i> Eliminar ficha</button>
+        <div style="margin-top:9px;display:flex;gap:14px">
+          <button onclick="document.getElementById('gi-photo-${g.id}').click()" style="background:none;border:none;color:var(--gl);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px;font-weight:600"><i class="ti ti-camera"></i> ${g.photo?'Cambiar foto':'Añadir foto'}</button>
+          <button onclick="delGuia(${g.id})" style="background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px"><i class="ti ti-trash"></i> Eliminar</button>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -713,6 +979,30 @@ function filterZone(z, btn) {
   currentZone = z;
   document.querySelectorAll('#zone-chips .chip').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on'); rGuias();
+}
+
+function addPhotoToGuia(e, id) {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  const url = URL.createObjectURL(f);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const MAX = 800;
+    let w = img.width, h = img.height;
+    if (w > MAX) { h = h*(MAX/w); w = MAX; }
+    if (h > MAX) { w = w*(MAX/h); h = MAX; }
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    const photoB64 = canvas.toDataURL('image/jpeg', 0.75);
+    URL.revokeObjectURL(url);
+    const g = st.guias.find(x=>x.id===id);
+    if (g) {
+      g.photo = photoB64;
+      scheduleSave(); rGuias();
+      toast('Foto añadida');
+    }
+  };
+  img.src = url;
 }
 
 function previewGuia(e) {
@@ -765,9 +1055,10 @@ function rStats() {
 
 // ─── CHIPS INTERNOS ───────────────────────────────────────────────
 function switchCt(id, btn) {
-  ['semana','rotacion'].forEach(t=>document.getElementById('ct-'+t).style.display=t===id?'block':'none');
+  ['semana','calendario','rotacion'].forEach(t=>document.getElementById('ct-'+t).style.display=t===id?'block':'none');
   document.querySelectorAll('#chore-chips .chip').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  if (id==='calendario') renderCal();
 }
 
 function switchEt(id, btn) {
@@ -777,8 +1068,22 @@ function switchEt(id, btn) {
 }
 
 // ─── MODALES ──────────────────────────────────────────────────────
-function openM(id) { document.getElementById(id).classList.add('on'); }
-function closeM(id) { document.getElementById(id).classList.remove('on'); }
+function openM(id) {
+  if (id === 'm-evento') {
+    const today = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    if (!document.getElementById('ev-start').value) document.getElementById('ev-start').value = today;
+    if (!document.getElementById('ev-end').value) document.getElementById('ev-end').value = today;
+    document.getElementById('ev-who').value = me;
+  }
+  document.getElementById(id).classList.add('on');
+}
+function closeM(id) {
+  document.getElementById(id).classList.remove('on');
+  if (id === 'm-evento') {
+    document.getElementById('ev-start').value = '';
+    document.getElementById('ev-end').value = '';
+  }
+}
 document.querySelectorAll('.mbg').forEach(m => {
   m.addEventListener('click', e => { if (e.target===m) m.classList.remove('on'); });
 });
