@@ -170,6 +170,7 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
   <div class="sec">
     <div class="chips" id="chore-chips">
       <button class="chip on" onclick="switchCt('semana',this)">Esta semana</button>
+      <button class="chip" onclick="switchCt('historial-sem',this)">Semanas anteriores</button>
       <button class="chip" onclick="switchCt('calendario',this)">Calendario</button>
       <button class="chip" onclick="switchCt('rotacion',this)">Rotación</button>
     </div>
@@ -198,6 +199,10 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
       <button class="btn btn-g" onclick="openM('m-evento')" style="margin-bottom:10px"><i class="ti ti-calendar-plus"></i> Añadir ausencia o visita</button>
       <div class="lbl">Próximos eventos</div>
       <div class="card" id="cal-list"></div>
+    </div>
+    <div id="ct-historial-sem" style="display:none">
+      <div class="lbl">Semanas anteriores</div>
+      <div id="week-history-list"></div>
     </div>
     <div id="ct-rotacion" style="display:none">
       <div class="lbl">Próximas 4 semanas</div>
@@ -1206,6 +1211,47 @@ function rStats() {
   setEl('stat-exp', st.gastos.length + ' registrados');
 }
 
+function rWeekHistory() {
+  const el = document.getElementById('week-history-list');
+  if (!el) return;
+  const history = (st.weekHistory||[]).slice().reverse(); // más reciente primero
+  if (!history.length) {
+    el.innerHTML = `<div class="empty">
+      <i class="ti ti-clock-hour-4"></i>
+      <div class="empty-title">Sin historial todavía</div>
+      <div class="empty-sub">El historial se va acumulando cada semana. Vuelve a verlo el próximo lunes.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = history.map(wk => {
+    const byUser = {E:[], A:[], U:[]};
+    (wk.entries||[]).forEach(e => { if (byUser[e.who]) byUser[e.who].push(e); });
+    const totalMins = (wk.entries||[]).reduce((a,e)=>a+(e.min||0),0);
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:var(--tx)">${fmtRange(wk.start, wk.end)}</div>
+        <span class="pill pill-s">${totalMins} min en total</span>
+      </div>
+      ${Object.keys(USERS).map(u => {
+        const tareas = byUser[u]||[];
+        const mins = tareas.reduce((a,e)=>a+(e.min||0),0);
+        if (!tareas.length) return `<div class="row">
+          <div class="av ${USERS[u].cls}" style="width:26px;height:26px;font-size:10px">${USERS[u].short}</div>
+          <div style="flex:1;font-size:13px;color:var(--tx3)">${USERS[u].name}</div>
+          <span style="font-size:12px;color:var(--tx3)">Sin tareas registradas</span>
+        </div>`;
+        return `<div class="row" style="align-items:flex-start">
+          <div class="av ${USERS[u].cls}" style="width:26px;height:26px;font-size:10px;margin-top:2px">${USERS[u].short}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;margin-bottom:3px">${USERS[u].name} · <span style="color:var(--g)">${mins} min</span></div>
+            <div style="font-size:12px;color:var(--tx3);line-height:1.6">${tareas.map(e=>e.name).join(' · ')}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
 function rEquity() {
   const el = document.getElementById('equity-card');
   if (!el) return;
@@ -1246,10 +1292,11 @@ function rEquity() {
 
 // ─── CHIPS INTERNOS ───────────────────────────────────────────────
 function switchCt(id, btn) {
-  ['semana','calendario','rotacion'].forEach(t=>document.getElementById('ct-'+t).style.display=t===id?'block':'none');
+  ['semana','historial-sem','calendario','rotacion'].forEach(t=>document.getElementById('ct-'+t).style.display=t===id?'block':'none');
   document.querySelectorAll('#chore-chips .chip').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   if (id==='calendario') renderCal();
+  if (id==='historial-sem') rWeekHistory();
 }
 
 function switchEt(id, btn) {
