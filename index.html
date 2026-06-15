@@ -323,7 +323,7 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 <div class="mbg" id="m-tarea">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Nueva tarea</div>
+    <div class="mtitle" id="m-tarea-title">Nueva tarea</div>
     <input type="text" class="inp" id="t-name" placeholder="Ej. Limpiar microondas">
     <select class="inp" id="t-who">
       <option value="E">Eliseo</option>
@@ -338,10 +338,18 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
       <option value="salon">Salón</option>
       <option value="general">General</option>
     </select>
-    <input type="number" class="inp" id="t-min" placeholder="Minutos estimados (ej. 15)" inputmode="numeric">
+    <div class="lbl" style="margin-top:2px">Tiempo estimado</div>
+    <select class="inp" id="t-min">
+      <option value="5">5 min — tarea rápida (sacar basura, limpiar espejo)</option>
+      <option value="10">10 min — tarea corta (barrer pasillo, papeleras)</option>
+      <option value="15" selected>15 min — tarea media (fregar suelos, microondas)</option>
+      <option value="20">20 min — tarea larga (limpiar baño, cocina)</option>
+      <option value="30">30 min — tarea pesada (horno, extractor, limpieza profunda)</option>
+      <option value="45">45 min — tarea muy pesada</option>
+    </select>
     <div class="g2">
-      <button class="btn btn-s" onclick="closeM('m-tarea')">Cancelar</button>
-      <button class="btn btn-g" onclick="addTarea()"><i class="ti ti-plus"></i> Guardar</button>
+      <button class="btn btn-s" onclick="cancelTareaModal()">Cancelar</button>
+      <button class="btn btn-g" id="t-save-btn" onclick="addTarea()"><i class="ti ti-plus"></i> Guardar</button>
     </div>
   </div>
 </div>
@@ -644,17 +652,21 @@ function rChores() {
     const finalWho = resolveAssignee(c.who, 0);
     const reassigned = finalWho !== c.who;
     const u = USERS[finalWho]; const isMe = finalWho === me;
-    return `<div class="row">
-      <div class="chk ${c.done?'done':''}" onclick="togChore(${c.id})">
+    return `<div class="row" style="align-items:flex-start;padding:12px 0">
+      <div class="chk ${c.done?'done':''}" onclick="togChore(${c.id})" style="margin-top:2px">
         ${c.done?'<i class="ti ti-check" style="color:#fff;font-size:11px"></i>':''}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:${isMe?'700':'400'};color:${c.done?'var(--tx3)':'var(--tx)'};text-decoration:${c.done?'line-through':'none'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           ${c.name}${isMe?' <span class="badge-you">Tú</span>':''}
         </div>
-        <div style="font-size:11px;color:var(--tx3)">${ZONES[c.zone]||c.zone} · ${c.min} min · ${u.name}${reassigned?` <span style="color:var(--ul);font-weight:600">· reasignada (${USERS[c.who].name} fuera)</span>`:''}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">${ZONES[c.zone]||c.zone} · ${c.min} min · ${u.name}${reassigned?` <span style="color:var(--ul);font-weight:600">· reasignada (${USERS[c.who].name} fuera)</span>`:''}</div>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <button onclick="editChore(${c.id})" style="background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:3px"><i class="ti ti-pencil"></i> Editar</button>
+          <button onclick="delChore(${c.id})" style="background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:3px"><i class="ti ti-trash"></i> Eliminar</button>
+        </div>
       </div>
-      <div class="av ${u.cls}" style="width:26px;height:26px;font-size:10px;flex-shrink:0">${u.short}</div>
+      <div class="av ${u.cls}" style="width:26px;height:26px;font-size:10px;flex-shrink:0;margin-top:2px">${u.short}</div>
     </div>`;
   }).join('');
 }
@@ -888,17 +900,62 @@ function addEvento() {
   toast(tipo==='ausencia' ? 'Ausencia añadida al calendario' : 'Visita añadida al calendario');
 }
 
+let editingChoreId = null;
+
+function cancelTareaModal() {
+  editingChoreId = null;
+  document.getElementById('t-name').value = '';
+  document.getElementById('m-tarea-title').textContent = 'Nueva tarea';
+  document.getElementById('t-save-btn').innerHTML = '<i class="ti ti-plus"></i> Guardar';
+  closeM('m-tarea');
+}
+
+function editChore(id) {
+  const c = st.chores.find(x=>x.id===id);
+  if (!c) return;
+  editingChoreId = id;
+  document.getElementById('t-name').value = c.name;
+  document.getElementById('t-who').value = c.who;
+  document.getElementById('t-zone').value = c.zone;
+  document.getElementById('t-min').value = c.min;
+  document.getElementById('m-tarea-title').textContent = 'Editar tarea';
+  document.getElementById('t-save-btn').innerHTML = '<i class="ti ti-check"></i> Guardar cambios';
+  openM('m-tarea');
+}
+
+function delChore(id) {
+  const c = st.chores.find(x=>x.id===id);
+  if (!c) return;
+  if (!confirm(`¿Eliminar "${c.name}"?`)) return;
+  st.chores = st.chores.filter(x=>x.id!==id);
+  scheduleSave(); rChores(); rHero(); rEquity();
+  toast('Tarea eliminada');
+}
+
 function addTarea() {
   const name = document.getElementById('t-name').value.trim();
   const who = document.getElementById('t-who').value;
   const zone = document.getElementById('t-zone').value;
   const min = parseInt(document.getElementById('t-min').value)||15;
   if (!name) { toast('Escribe el nombre de la tarea'); return; }
-  const finalWho = who==='auto' ? ['E','A','U'][st.nextCid%3] : who;
-  st.chores.push({id:st.nextCid++, name, who:finalWho, done:false, zone, min});
+
+  if (editingChoreId !== null) {
+    // Modo edición
+    const c = st.chores.find(x=>x.id===editingChoreId);
+    if (c) { c.name=name; c.who=who; c.zone=zone; c.min=min; }
+    editingChoreId = null;
+    toast('Tarea actualizada');
+  } else {
+    // Modo creación
+    const finalWho = who==='auto' ? ['E','A','U'][st.nextCid%3] : who;
+    st.chores.push({id:st.nextCid++, name, who:finalWho, done:false, zone, min});
+    toast('Tarea añadida');
+  }
   scheduleSave(); closeM('m-tarea'); rChores(); rHero();
-  document.getElementById('t-name').value=''; document.getElementById('t-min').value='';
-  toast('Tarea añadida');
+  document.getElementById('t-name').value='';
+  document.getElementById('t-min').value='';
+  document.getElementById('m-tarea-title').textContent='Nueva tarea';
+  document.getElementById('t-save-btn').innerHTML='<i class="ti ti-plus"></i> Guardar';
 }
 
 // ─── GASTOS ───────────────────────────────────────────────────────
