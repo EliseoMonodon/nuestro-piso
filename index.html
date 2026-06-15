@@ -272,7 +272,7 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
       <div class="stat-row"><span style="color:var(--tx2)">Fichas en el manual</span><span style="font-weight:700" id="stat-guias">—</span></div>
       <div class="stat-row"><span style="color:var(--tx2)">Gastos registrados</span><span style="font-weight:700" id="stat-exp">—</span></div>
     </div>
-    <div class="lbl">Informe de equidad · últimos 28 días</div>
+    <div class="lbl">Informe de equidad · últimas 4 semanas</div>
     <div id="equity-card" class="card"></div>
     <div class="card" style="background:var(--gp);border-color:#A8D5B5">
       <div style="font-size:12px;color:var(--g);font-weight:700;margin-bottom:5px"><i class="ti ti-share"></i> Compartir con roommates</div>
@@ -489,13 +489,51 @@ async function loadFromSupabase() {
   } catch(e) {
     setSyncDot('err');
     toast('Sin conexión — usando datos locales');
-    // fallback to localStorage
     try {
       const local = localStorage.getItem('piso-v4');
       if (local) st = JSON.parse(local);
     } catch(_) {}
   }
+  checkWeeklyReset();
   render();
+}
+
+// ─── RESET SEMANAL (cada lunes) ───────────────────────────────────
+function checkWeeklyReset() {
+  const currentWeek = weekIndex(0);
+  const lastWeek = st.lastWeekIndex || 0;
+  if (currentWeek <= lastWeek) return; // misma semana, nada que hacer
+
+  // Archivar tareas completadas esta semana para el historial de equidad
+  if (!st.weekHistory) st.weekHistory = [];
+  const completedThisWeek = st.chores.filter(c => c.done);
+  if (completedThisWeek.length > 0) {
+    const {start, end} = cleaningWeekRange(0);
+    st.weekHistory.push({
+      week: lastWeek,
+      start, end,
+      entries: completedThisWeek.map(c => ({
+        name: c.name,
+        who: c.doneBy || c.who,
+        min: c.min,
+        zone: c.zone
+      }))
+    });
+    // Mantener solo las últimas 8 semanas de historial
+    if (st.weekHistory.length > 8) st.weekHistory = st.weekHistory.slice(-8);
+  }
+
+  // Resetear todas las tareas a no hechas
+  st.chores.forEach(c => {
+    c.done = false;
+    delete c.doneBy;
+    delete c.doneDate;
+    delete c.doneWeek;
+  });
+
+  st.lastWeekIndex = currentWeek;
+  scheduleSave();
+  toast('🗓 Nueva semana — tareas reiniciadas');
 }
 
 function scheduleSave() {
@@ -701,15 +739,15 @@ function dateStr(y,m,d){
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-// ─── SEMANA DE LIMPIEZA (sábado a viernes) ─────────────────────────
+// ─── SEMANA DE LIMPIEZA (lunes a domingo) ────────────────────────
 // offset 0 = semana actual, 1 = siguiente, etc.
 function cleaningWeekRange(offset=0) {
   const now = new Date();
-  const dow = now.getDay(); // 0=domingo,...,6=sábado
-  // días desde el último sábado (si hoy es sábado, 0)
-  const daysSinceSat = (dow + 1) % 7; // sáb=6->0, dom=0->1, lun=1->2 ... vie=5->6
+  const dow = now.getDay(); // 0=domingo, 1=lunes, ..., 6=sábado
+  // días desde el último lunes (si hoy es lunes, 0; domingo, 6)
+  const daysSinceMon = (dow + 6) % 7; // lun=1->0, mar=2->1 ... dom=0->6
   const start = new Date(now);
-  start.setDate(now.getDate() - daysSinceSat + offset*7);
+  start.setDate(now.getDate() - daysSinceMon + offset*7);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   return {
@@ -722,7 +760,7 @@ function cleaningWeekRange(offset=0) {
 // Índice absoluto de semana (para que la rotación avance de forma estable cada semana real)
 function weekIndex(offset=0) {
   const {startDate} = cleaningWeekRange(offset);
-  const epoch = new Date(2024,0,6); // un sábado de referencia
+  const epoch = new Date(2024,0,1); // un lunes de referencia (1 ene 2024 era lunes)
   const diffDays = Math.round((startDate - epoch) / 86400000);
   return Math.floor(diffDays / 7);
 }
@@ -744,18 +782,30 @@ function isAbsentDuringWeek(user, offset=0) {
 // ─── SISTEMA DE EQUIDAD ───────────────────────────────────────────
 // Calcula minutos reales hechos por cada persona en los últimos 28 días
 function calcEquity() {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 28);
-  const cutoffStr = dateStr(cutoff.getFullYear(), cutoff.getMonth(), cutoff.getDate());
+  const cutoffWeek = weekIndex(0) - 4; // últimas 4 semanas
   const mins = {E:0, A:0, U:0};
+
+  // Tareas completadas en la semana actual (aún no archivadas)
   st.chores.forEach(c => {
-    if (c.done && c.doneBy && c.doneDate && c.doneDate >= cutoffStr) {
+    if (c.done && c.doneBy) {
       mins[c.doneBy] = (mins[c.doneBy]||0) + (c.min||0);
     }
   });
+
+  // Tareas archivadas de semanas anteriores (últimas 4)
+  (st.weekHistory||[]).forEach(wk => {
+    if (wk.week >= cutoffWeek) {
+      (wk.entries||[]).forEach(e => {
+        if (e.who && mins[e.who] !== undefined) {
+          mins[e.who] = (mins[e.who]||0) + (e.min||0);
+        }
+      });
+    }
+  });
+
   const total = Object.values(mins).reduce((a,b)=>a+b,0);
   const fair = total / 3;
-  const balance = {}; // positivo = hizo de más, negativo = debe
+  const balance = {};
   Object.keys(USERS).forEach(u => { balance[u] = (mins[u]||0) - fair; });
   return {mins, total, fair, balance};
 }
@@ -1190,7 +1240,7 @@ function rEquity() {
       </div>
     </div>`;
   }).join('') + `<div style="font-size:11px;color:var(--tx3);margin-top:4px;border-top:1px solid var(--bd);padding-top:8px">
-    <i class="ti ti-info-circle"></i> Reparto justo: ~${Math.round(fair)} min c/u · Se reinicia automáticamente cada 28 días
+    <i class="ti ti-info-circle"></i> Reparto justo: ~${Math.round(fair)} min c/u · Basado en las últimas 4 semanas
   </div>`;
 }
 
