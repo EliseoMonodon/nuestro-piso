@@ -272,6 +272,8 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
       <div class="stat-row"><span style="color:var(--tx2)">Fichas en el manual</span><span style="font-weight:700" id="stat-guias">—</span></div>
       <div class="stat-row"><span style="color:var(--tx2)">Gastos registrados</span><span style="font-weight:700" id="stat-exp">—</span></div>
     </div>
+    <div class="lbl">Informe de equidad · últimos 28 días</div>
+    <div id="equity-card" class="card"></div>
     <div class="card" style="background:var(--gp);border-color:#A8D5B5">
       <div style="font-size:12px;color:var(--g);font-weight:700;margin-bottom:5px"><i class="ti ti-share"></i> Compartir con roommates</div>
       <div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:10px">Comparte la URL con Antonio y Urbano. Cada uno toca su inicial en el cabecero. Los datos se sincronizan entre todos en tiempo real.</div>
@@ -558,7 +560,7 @@ function updateUserUI() {
 // ─── RENDER ───────────────────────────────────────────────────────
 function render() {
   updateUserUI();
-  rHero(); rChores(); rBal(); rHist(); rRot(); rGuias(); rStats(); rHomeCal(); rWeekAbs();
+  rHero(); rChores(); rBal(); rHist(); rRot(); rGuias(); rStats(); rHomeCal(); rWeekAbs(); rEquity();
 }
 
 function rWeekAbs() {
@@ -659,7 +661,17 @@ function rChores() {
 
 function togChore(id) {
   const c = st.chores.find(x=>x.id===id);
-  if (c) { c.done=!c.done; scheduleSave(); rChores(); rHero(); toast(c.done?'✓ Tarea completada':'Tarea reabierta'); }
+  if (!c) return;
+  c.done = !c.done;
+  if (c.done) {
+    c.doneBy = me;
+    c.doneDate = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    c.doneWeek = weekIndex(0);
+  } else {
+    delete c.doneBy; delete c.doneDate; delete c.doneWeek;
+  }
+  scheduleSave(); rChores(); rHero(); rEquity();
+  toast(c.done ? '✓ Tarea completada' : 'Tarea reabierta');
 }
 
 // ─── CALENDARIO ───────────────────────────────────────────────────
@@ -717,15 +729,49 @@ function isAbsentDuringWeek(user, offset=0) {
   return (st.eventos||[]).some(e => e.who===user && e.type==='ausencia' && e.start <= end && e.end >= start);
 }
 
-// Para una semana dada, devuelve el "who" final de una tarea, reasignando si está ausente
+// ─── SISTEMA DE EQUIDAD ───────────────────────────────────────────
+// Calcula minutos reales hechos por cada persona en los últimos 28 días
+function calcEquity() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 28);
+  const cutoffStr = dateStr(cutoff.getFullYear(), cutoff.getMonth(), cutoff.getDate());
+  const mins = {E:0, A:0, U:0};
+  st.chores.forEach(c => {
+    if (c.done && c.doneBy && c.doneDate && c.doneDate >= cutoffStr) {
+      mins[c.doneBy] = (mins[c.doneBy]||0) + (c.min||0);
+    }
+  });
+  const total = Object.values(mins).reduce((a,b)=>a+b,0);
+  const fair = total / 3;
+  const balance = {}; // positivo = hizo de más, negativo = debe
+  Object.keys(USERS).forEach(u => { balance[u] = (mins[u]||0) - fair; });
+  return {mins, total, fair, balance};
+}
+
+// ¿Está esta persona "en pausa" por haber hecho de más?
+// Solo se pausa si lleva >25% más que la media (umbral para no ser demasiado sensible)
+function isOnPause(user) {
+  const {balance, fair} = calcEquity();
+  if (fair < 10) return false;
+  return balance[user] > fair * 0.25;
+}
+
+// Para una semana dada, devuelve el "who" final de una tarea
+// Prioridad: 1) ausencia en calendario, 2) pausa por equidad
 function resolveAssignee(originalWho, weekOffset=0) {
-  if (!isAbsentDuringWeek(originalWho, weekOffset)) return originalWho;
+  const absent = isAbsentDuringWeek(originalWho, weekOffset);
+  const paused = weekOffset === 0 && isOnPause(originalWho);
+  if (!absent && !paused) return originalWho;
   const others = ['E','A','U'].filter(u => u !== originalWho);
-  // Si ambos están disponibles, alterna según el índice de semana para repartir equitativamente
-  const available = others.filter(u => !isAbsentDuringWeek(u, weekOffset));
-  if (available.length === 0) return originalWho; // los 3 fuera, no se reasigna
+  const available = others.filter(u =>
+    !isAbsentDuringWeek(u, weekOffset) &&
+    !(weekOffset === 0 && isOnPause(u))
+  );
+  if (available.length === 0) return originalWho;
   if (available.length === 1) return available[0];
-  return available[(weekIndex(weekOffset) + originalWho.charCodeAt(0)) % 2];
+  // Entre los disponibles, elige el que menos minutos acumulados tenga
+  const {mins} = calcEquity();
+  return available.sort((a,b) => (mins[a]||0) - (mins[b]||0))[0];
 }
 
 function eventsOnDay(ds) {
@@ -1051,6 +1097,44 @@ function rStats() {
   setEl('stat-done', st.chores.filter(c=>c.done).length + ' completadas');
   setEl('stat-guias', st.guias.length + ' fichas');
   setEl('stat-exp', st.gastos.length + ' registrados');
+}
+
+function rEquity() {
+  const el = document.getElementById('equity-card');
+  if (!el) return;
+  const {mins, total, fair, balance} = calcEquity();
+  if (total < 5) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--tx3);text-align:center;padding:8px 0">
+      <i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:6px;opacity:.4"></i>
+      Sin datos suficientes todavía — se irá rellenando conforme marquéis tareas como hechas.
+    </div>`;
+    return;
+  }
+  const maxMins = Math.max(...Object.values(mins), fair * 1.5, 1);
+  el.innerHTML = Object.keys(USERS).map(u => {
+    const m = mins[u] || 0;
+    const b = balance[u];
+    const pct = Math.round(m / maxMins * 100);
+    const status = b > fair * 0.25 ? 'pausa' : b < -fair * 0.25 ? 'debe' : 'ok';
+    const statusLabel = status === 'pausa'
+      ? `<span class="pill" style="background:var(--ulp);color:var(--ul);font-size:10px">Pausado esta semana</span>`
+      : status === 'debe'
+      ? `<span class="pill pill-a" style="font-size:10px">Hace falta que arrime más</span>`
+      : `<span class="pill pill-g" style="font-size:10px">Al día</span>`;
+    return `<div style="margin-bottom:13px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <div class="av ${USERS[u].cls}" style="width:26px;height:26px;font-size:10px">${USERS[u].short}</div>
+        <div style="flex:1;font-weight:600;font-size:14px">${USERS[u].name}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--tx2)">${m} min</div>
+        ${statusLabel}
+      </div>
+      <div class="bbar" style="height:7px">
+        <div class="bfill ${status==='debe'?'neg':''}" style="width:${pct}%;background:${status==='pausa'?'var(--ul)':status==='debe'?'var(--al)':'var(--gl)'}"></div>
+      </div>
+    </div>`;
+  }).join('') + `<div style="font-size:11px;color:var(--tx3);margin-top:4px;border-top:1px solid var(--bd);padding-top:8px">
+    <i class="ti ti-info-circle"></i> Reparto justo: ~${Math.round(fair)} min c/u · Se reinicia automáticamente cada 28 días
+  </div>`;
 }
 
 // ─── CHIPS INTERNOS ───────────────────────────────────────────────
