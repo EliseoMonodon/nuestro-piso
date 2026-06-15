@@ -621,20 +621,31 @@ function rWeekAbs() {
   const wk = cleaningWeekRange(0);
   if (lbl) lbl.textContent = `Tareas · ${fmtRange(wk.start, wk.end)}`;
   const absent = ['E','A','U'].filter(u => isAbsentDuringWeek(u, 0));
-  const baseInfo = '<div style="font-size:12px;color:var(--tx3)"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan</div>';
   if (!absent.length) {
-    el.innerHTML = `<div style="font-size:13px;color:var(--tx2);margin-bottom:8px"><i class="ti ti-check" style="color:var(--g)"></i> Los tres estáis disponibles esta semana</div>${baseInfo}`;
+    el.innerHTML = `<div style="font-size:13px;color:var(--tx2);margin-bottom:6px"><i class="ti ti-check" style="color:var(--g)"></i> Los tres estáis disponibles esta semana</div>
+    <div style="font-size:12px;color:var(--tx3)"><i class="ti ti-info-circle"></i> Si alguien está fuera, sus tareas se reasignan automáticamente</div>`;
     return;
   }
   el.innerHTML = absent.map(u => {
     const usr = USERS[u];
-    const ev = (st.eventos||[]).find(e => e.who===u && e.type==='ausencia');
-    return `<div class="row">
-      <div class="av ${usr.cls}" style="width:28px;height:28px;font-size:11px">${usr.short}</div>
-      <div style="flex:1;font-size:14px">${usr.name} fuera${ev?' · '+fmtRange(ev.start,ev.end):''}</div>
-      <span class="pill pill-a">Reasignado</span>
+    const long = isLongAbsence(u, 0);
+    const weeks = absenceDurationWeeks(u, 0);
+    const ev = (st.eventos||[]).find(e => e.who===u && e.type==='ausencia' && e.start <= wk.end && e.end >= wk.start);
+    const pill = long
+      ? `<span class="pill" style="background:var(--ulp);color:var(--ul);font-size:10px">Ausencia larga · ${weeks} sem.</span>`
+      : `<span class="pill pill-a" style="font-size:10px">Reasignado</span>`;
+    const info = long
+      ? `<div style="font-size:11px;color:var(--ul);margin-top:3px">Modo dos personas — sus tareas no se reparten</div>`
+      : '';
+    return `<div class="row" style="align-items:flex-start">
+      <div class="av ${usr.cls}" style="width:28px;height:28px;font-size:11px;margin-top:2px">${usr.short}</div>
+      <div style="flex:1">
+        <div style="font-size:14px">${usr.name} fuera${ev?' · '+fmtRange(ev.start,ev.end):''}</div>
+        ${info}
+      </div>
+      ${pill}
     </div>`;
-  }).join('') + baseInfo;
+  }).join('') + `<div style="font-size:12px;color:var(--tx3);margin-top:8px"><i class="ti ti-info-circle"></i> Ausencias &lt;3 semanas → se reasignan · ≥3 semanas → modo dos personas</div>`;
 }
 
 function rHomeCal() {
@@ -691,7 +702,25 @@ function rChores() {
     el.innerHTML = '<div class="empty"><i class="ti ti-checklist"></i><div class="empty-title">Sin tareas</div><div class="empty-sub">Añade la primera</div></div>';
     return;
   }
-  el.innerHTML = st.chores.map(c => {
+
+  // Detectar si alguien está en ausencia larga esta semana
+  const longAbsent = ['E','A','U'].filter(u => isLongAbsence(u, 0));
+  let banner = '';
+  if (longAbsent.length) {
+    const names = longAbsent.map(u => USERS[u].name).join(' y ');
+    banner = `<div style="background:var(--ulp);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--ul);display:flex;align-items:center;gap:8px">
+      <i class="ti ti-plane-departure" style="font-size:18px;flex-shrink:0"></i>
+      <div><strong>${names}</strong> está en ausencia larga — sus tareas no se reasignan esta semana. Rotación de dos personas.</div>
+    </div>`;
+  }
+
+  const visibleChores = st.chores.filter(c => resolveAssignee(c.who, 0) !== null);
+  if (!visibleChores.length) {
+    el.innerHTML = banner + '<div class="empty"><i class="ti ti-beach"></i><div class="empty-title">Sin tareas esta semana</div><div class="empty-sub">Todos están de ausencia larga</div></div>';
+    return;
+  }
+
+  el.innerHTML = banner + visibleChores.map(c => {
     const finalWho = resolveAssignee(c.who, 0);
     const reassigned = finalWho !== c.who;
     const u = USERS[finalWho]; const isMe = finalWho === me;
@@ -784,6 +813,22 @@ function isAbsentDuringWeek(user, offset=0) {
   return (st.eventos||[]).some(e => e.who===user && e.type==='ausencia' && e.start <= end && e.end >= start);
 }
 
+// Calcula cuántas semanas dura la ausencia que cubre una semana concreta
+function absenceDurationWeeks(user, offset=0) {
+  const {start, end} = cleaningWeekRange(offset);
+  const ev = (st.eventos||[]).find(e => e.who===user && e.type==='ausencia' && e.start <= end && e.end >= start);
+  if (!ev) return 0;
+  const msPerWeek = 7 * 24 * 3600 * 1000;
+  const startD = new Date(ev.start);
+  const endD = new Date(ev.end);
+  return Math.ceil((endD - startD + 86400000) / msPerWeek);
+}
+
+// ¿Es una ausencia larga (≥3 semanas)? → modo dos personas, sin deuda
+function isLongAbsence(user, offset=0) {
+  return isAbsentDuringWeek(user, offset) && absenceDurationWeeks(user, offset) >= 3;
+}
+
 // ─── SISTEMA DE EQUIDAD ───────────────────────────────────────────
 // Calcula minutos reales hechos por cada persona en los últimos 28 días
 function calcEquity() {
@@ -823,20 +868,27 @@ function isOnPause(user) {
   return balance[user] > fair * 0.25;
 }
 
-// Para una semana dada, devuelve el "who" final de una tarea
-// Prioridad: 1) ausencia en calendario, 2) pausa por equidad
+// Para una semana dada, devuelve el "who" final de una tarea.
+// Devuelve null si la tarea debe desaparecer (ausencia larga).
+// Prioridad: 1) ausencia larga → null, 2) ausencia corta → reasignar, 3) pausa por equidad → reasignar
 function resolveAssignee(originalWho, weekOffset=0) {
   const absent = isAbsentDuringWeek(originalWho, weekOffset);
   const paused = weekOffset === 0 && isOnPause(originalWho);
+
   if (!absent && !paused) return originalWho;
+
+  // Ausencia larga (≥3 semanas): tarea desaparece, modo dos personas
+  if (absent && isLongAbsence(originalWho, weekOffset)) return null;
+
+  // Ausencia corta o pausa por equidad: reasignar al disponible con menos minutos
   const others = ['E','A','U'].filter(u => u !== originalWho);
   const available = others.filter(u =>
     !isAbsentDuringWeek(u, weekOffset) &&
+    !isLongAbsence(u, weekOffset) &&
     !(weekOffset === 0 && isOnPause(u))
   );
-  if (available.length === 0) return originalWho;
+  if (available.length === 0) return null; // todos fuera
   if (available.length === 1) return available[0];
-  // Entre los disponibles, elige el que menos minutos acumulados tenga
   const {mins} = calcEquity();
   return available.sort((a,b) => (mins[a]||0) - (mins[b]||0))[0];
 }
@@ -1086,18 +1138,30 @@ function rRot() {
   el.innerHTML = [0,1,2,3].map((wi) => {
     const wk = cleaningWeekRange(wi);
     const label = wi===0 ? `Esta semana · ${fmtRange(wk.start,wk.end)}` : fmtRange(wk.start,wk.end);
+    const longAbsentThisWeek = users.filter(u => isLongAbsence(u, wi));
+    const modoBanner = longAbsentThisWeek.length
+      ? `<div style="font-size:11px;color:var(--ul);margin-bottom:7px"><i class="ti ti-plane-departure"></i> Modo dos personas — ${longAbsentThisWeek.map(u=>USERS[u].name).join(', ')} fuera</div>`
+      : '';
     return `
     <div class="card" style="margin-bottom:10px">
-      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">${label}</div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">${label}</div>
+      ${modoBanner}
       ${zones.map((z,zi) => {
         const baseU = users[(zi+weekIndex(wi))%3];
         const u = resolveAssignee(baseU, wi);
+        if (u === null) {
+          return `<div class="row">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--bd);flex-shrink:0"></div>
+            <div style="flex:1;font-size:14px;color:var(--tx3)">${z}</div>
+            <span style="font-size:11px;color:var(--tx3)">Suspendida</span>
+          </div>`;
+        }
         const av = USERS[u];
         const reassigned = u !== baseU;
         return `<div class="row">
           <div class="av ${av.cls}" style="width:24px;height:24px;font-size:9px">${av.short}</div>
           <div style="flex:1;font-size:14px">${z}</div>
-          <div style="font-size:13px;font-weight:${u===me?'700':'400'};color:${u===me?'var(--g)':'var(--tx2)'}">${av.name}${u===me?' ★':''}${reassigned?' <span style="color:var(--ul);font-size:11px">(reasignada)</span>':''}</div>
+          <div style="font-size:13px;font-weight:${u===me?'700':'400'};color:${u===me?'var(--g)':'var(--tx2)'}">${av.name}${u===me?' ★':''}${reassigned?' <span style="color:var(--ul);font-size:11px">(reasig.)</span>':''}</div>
         </div>`;
       }).join('')}
     </div>`;
